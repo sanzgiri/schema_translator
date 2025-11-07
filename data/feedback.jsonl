@@ -1,0 +1,1 @@
+{"query_text": "test query", "semantic_plan": {"intent": "find_contracts", "filters": [], "projections": ["contract_identifier"], "aggregations": [], "group_by": null, "order_by": null, "limit": 10}, "feedback_type": "good", "feedback_text": "Works great!", "correct_result": null, "timestamp": "2025-11-07T21:26:46.679147"}

@@ -105,10 +105,13 @@ class TestResultFormatting:
             execution_time_ms=1.0
         )
         
-        output = format_result_table(result)
+        # Test with default limit of 10
+        output = format_result_table(result, limit=10)
+        assert "Showing 10 of 100 rows" in output
         
-        # Should show "... and 50 more rows"
-        assert "50 more rows" in output
+        # Test with custom limit of 50
+        output = format_result_table(result, limit=50)
+        assert "Showing 50 of 100 rows" in output
 
 
 class TestStatisticsFormatting:

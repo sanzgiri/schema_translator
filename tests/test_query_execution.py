@@ -197,7 +197,7 @@ class TestDatabaseExecutor:
         
         assert result.success
         assert result.row_count == 1
-        assert result.data[0]["count"] == 50
+        assert result.data[0]["count"] == 100
     
     def test_invalid_sql(self, executor):
         """Test handling of invalid SQL."""
@@ -223,7 +223,7 @@ class TestDatabaseExecutor:
     def test_count_rows(self, executor):
         """Test counting rows in a table."""
         count = executor.count_rows("customer_a", "contracts")
-        assert count == 50
+        assert count == 100
     
     def test_customer_b_multi_table(self, executor):
         """Test querying Customer B's multi-table schema."""

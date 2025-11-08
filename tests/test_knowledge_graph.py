@@ -269,9 +269,10 @@ class TestLoadedKnowledgeGraph:
         kg = SchemaKnowledgeGraph()
         kg.load()
         
-        # Check concepts exist
-        assert len(kg.concepts) == 7
+        # Check concepts exist (8 concepts including contract_name)
+        assert len(kg.concepts) == 8
         assert kg.get_concept("contract_identifier") is not None
+        assert kg.get_concept("contract_name") is not None
         assert kg.get_concept("contract_value") is not None
         assert kg.get_concept("contract_expiration") is not None
     

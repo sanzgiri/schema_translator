@@ -1,0 +1,557 @@
+{
+  "concepts": {
+    "contract_identifier": {
+      "concept_id": "contract_identifier",
+      "concept_name": "Contract Identifier",
+      "description": "Unique identifier for a contract",
+      "aliases": [
+        "contract_id",
+        "id",
+        "contract_name",
+        "name"
+      ],
+      "customer_mappings": {
+        "customer_a": {
+          "customer_id": "customer_a",
+          "table_name": "contracts",
+          "column_name": "contract_id",
+          "data_type": "INTEGER",
+          "semantic_type": "integer",
+          "transformation": null,
+          "join_requirements": []
+        },
+        "customer_b": {
+          "customer_id": "customer_b",
+          "table_name": "contract_headers",
+          "column_name": "id",
+          "data_type": "INTEGER",
+          "semantic_type": "integer",
+          "transformation": null,
+          "join_requirements": []
+        },
+        "customer_c": {
+          "customer_id": "customer_c",
+          "table_name": "contracts",
+          "column_name": "id",
+          "data_type": "INTEGER",
+          "semantic_type": "integer",
+          "transformation": null,
+          "join_requirements": []
+        },
+        "customer_d": {
+          "customer_id": "customer_d",
+          "table_name": "contracts",
+          "column_name": "contract_id",
+          "data_type": "INTEGER",
+          "semantic_type": "integer",
+          "transformation": null,
+          "join_requirements": []
+        },
+        "customer_e": {
+          "customer_id": "customer_e",
+          "table_name": "contracts",
+          "column_name": "contract_id",
+          "data_type": "INTEGER",
+          "semantic_type": "integer",
+          "transformation": null,
+          "join_requirements": []
+        },
+        "customer_f": {
+          "customer_id": "customer_f",
+          "table_name": "contracts",
+          "column_name": "contract_id",
+          "data_type": "INTEGER",
+          "semantic_type": "integer",
+          "transformation": null,
+          "join_requirements": []
+        }
+      }
+    },
+    "contract_expiration": {
+      "concept_id": "contract_expiration",
+      "concept_name": "Contract Expiration",
+      "description": "When the contract expires or is due for renewal",
+      "aliases": [
+        "expiry",
+        "expiration",
+        "renewal_date",
+        "end_date"
+      ],
+      "customer_mappings": {
+        "customer_a": {
+          "customer_id": "customer_a",
+          "table_name": "contracts",
+          "column_name": "expiry_date",
+          "data_type": "TEXT",
+          "semantic_type": "date",
+          "transformation": null,
+          "join_requirements": []
+        },
+        "customer_b": {
+          "customer_id": "customer_b",
+          "table_name": "renewal_schedule",
+          "column_name": "renewal_date",
+          "data_type": "TEXT",
+          "semantic_type": "date",
+          "transformation": null,
+          "join_requirements": [
+            "contract_headers"
+          ]
+        },
+        "customer_c": {
+          "customer_id": "customer_c",
+          "table_name": "contracts",
+          "column_name": "expiration_date",
+          "data_type": "TEXT",
+          "semantic_type": "date",
+          "transformation": null,
+          "join_requirements": []
+        },
+        "customer_d": {
+          "customer_id": "customer_d",
+          "table_name": "contracts",
+          "column_name": "days_remaining",
+          "data_type": "INTEGER",
+          "semantic_type": "days_remaining",
+          "transformation": "DATE(CURRENT_DATE, '+' || days_remaining || ' days')",
+          "join_requirements": []
+        },
+        "customer_e": {
+          "customer_id": "customer_e",
+          "table_name": "contracts",
+          "column_name": "expiry_date",
+          "data_type": "TEXT",
+          "semantic_type": "date",
+          "transformation": null,
+          "join_requirements": []
+        },
+        "customer_f": {
+          "customer_id": "customer_f",
+          "table_name": "contracts",
+          "column_name": "expiration_date",
+          "data_type": "TEXT",
+          "semantic_type": "date",
+          "transformation": null,
+          "join_requirements": []
+        }
+      }
+    },
+    "contract_value": {
+      "concept_id": "contract_value",
+      "concept_name": "Contract Value",
+      "description": "Monetary value of the contract",
+      "aliases": [
+        "value",
+        "amount",
+        "total_value",
+        "contract_amount"
+      ],
+      "customer_mappings": {
+        "customer_a": {
+          "customer_id": "customer_a",
+          "table_name": "contracts",
+          "column_name": "contract_value",
+          "data_type": "INTEGER",
+          "semantic_type": "lifetime_total",
+          "transformation": null,
+          "join_requirements": []
+        },
+        "customer_b": {
+          "customer_id": "customer_b",
+          "table_name": "contract_headers",
+          "column_name": "contract_value",
+          "data_type": "INTEGER",
+          "semantic_type": "lifetime_total",
+          "transformation": null,
+          "join_requirements": []
+        },
+        "customer_c": {
+          "customer_id": "customer_c",
+          "table_name": "contracts",
+          "column_name": "total_value",
+          "data_type": "INTEGER",
+          "semantic_type": "lifetime_total",
+          "transformation": null,
+          "join_requirements": []
+        },
+        "customer_d": {
+          "customer_id": "customer_d",
+          "table_name": "contracts",
+          "column_name": "contract_value",
+          "data_type": "INTEGER",
+          "semantic_type": "lifetime_total",
+          "transformation": null,
+          "join_requirements": []
+        },
+        "customer_e": {
+          "customer_id": "customer_e",
+          "table_name": "contracts",
+          "column_name": "contract_value",
+          "data_type": "INTEGER",
+          "semantic_type": "lifetime_total",
+          "transformation": null,
+          "join_requirements": []
+        },
+        "customer_f": {
+          "customer_id": "customer_f",
+          "table_name": "contracts",
+          "column_name": "contract_value",
+          "data_type": "INTEGER",
+          "semantic_type": "annual_recurring_revenue",
+          "transformation": "(contract_value * term_years)",
+          "join_requirements": []
+        }
+      }
+    },
+    "contract_status": {
+      "concept_id": "contract_status",
+      "concept_name": "Contract Status",
+      "description": "Current status of the contract (active, inactive, expired, etc.)",
+      "aliases": [
+        "status",
+        "current_status",
+        "state"
+      ],
+      "customer_mappings": {
+        "customer_a": {
+          "customer_id": "customer_a",
+          "table_name": "contracts",
+          "column_name": "status",
+          "data_type": "TEXT",
+          "semantic_type": "text",
+          "transformation": null,
+          "join_requirements": []
+        },
+        "customer_b": {
+          "customer_id": "customer_b",
+          "table_name": "contract_status_history",
+          "column_name": "status",
+          "data_type": "TEXT",
+          "semantic_type": "text",
+          "transformation": "(SELECT status FROM contract_status_history WHERE contract_id = id ORDER BY status_date DESC LIMIT 1)",
+          "join_requirements": [
+            "contract_headers"
+          ]
+        },
+        "customer_c": {
+          "customer_id": "customer_c",
+          "table_name": "contracts",
+          "column_name": "current_status",
+          "data_type": "TEXT",
+          "semantic_type": "text",
+          "transformation": null,
+          "join_requirements": []
+        },
+        "customer_d": {
+          "customer_id": "customer_d",
+          "table_name": "contracts",
+          "column_name": "status",
+          "data_type": "TEXT",
+          "semantic_type": "text",
+          "transformation": null,
+          "join_requirements": []
+        },
+        "customer_e": {
+          "customer_id": "customer_e",
+          "table_name": "contracts",
+          "column_name": "status",
+          "data_type": "TEXT",
+          "semantic_type": "text",
+          "transformation": null,
+          "join_requirements": []
+        },
+        "customer_f": {
+          "customer_id": "customer_f",
+          "table_name": "contracts",
+          "column_name": "status",
+          "data_type": "TEXT",
+          "semantic_type": "text",
+          "transformation": null,
+          "join_requirements": []
+        }
+      }
+    },
+    "industry_sector": {
+      "concept_id": "industry_sector",
+      "concept_name": "Industry Sector",
+      "description": "Business industry or vertical of the customer",
+      "aliases": [
+        "industry",
+        "sector",
+        "vertical",
+        "business_sector"
+      ],
+      "customer_mappings": {
+        "customer_a": {
+          "customer_id": "customer_a",
+          "table_name": "contracts",
+          "column_name": "industry",
+          "data_type": "TEXT",
+          "semantic_type": "text",
+          "transformation": null,
+          "join_requirements": []
+        },
+        "customer_b": {
+          "customer_id": "customer_b",
+          "table_name": "contract_headers",
+          "column_name": "sector",
+          "data_type": "TEXT",
+          "semantic_type": "text",
+          "transformation": null,
+          "join_requirements": []
+        },
+        "customer_c": {
+          "customer_id": "customer_c",
+          "table_name": "contracts",
+          "column_name": "business_sector",
+          "data_type": "TEXT",
+          "semantic_type": "text",
+          "transformation": null,
+          "join_requirements": []
+        },
+        "customer_d": {
+          "customer_id": "customer_d",
+          "table_name": "contracts",
+          "column_name": "industry",
+          "data_type": "TEXT",
+          "semantic_type": "text",
+          "transformation": null,
+          "join_requirements": []
+        },
+        "customer_e": {
+          "customer_id": "customer_e",
+          "table_name": "contracts",
+          "column_name": "industry",
+          "data_type": "TEXT",
+          "semantic_type": "text",
+          "transformation": null,
+          "join_requirements": []
+        },
+        "customer_f": {
+          "customer_id": "customer_f",
+          "table_name": "contracts",
+          "column_name": "sector",
+          "data_type": "TEXT",
+          "semantic_type": "text",
+          "transformation": null,
+          "join_requirements": []
+        }
+      }
+    },
+    "customer_name": {
+      "concept_id": "customer_name",
+      "concept_name": "Customer Name",
+      "description": "Name of the customer/client organization",
+      "aliases": [
+        "client",
+        "account",
+        "organization",
+        "client_name"
+      ],
+      "customer_mappings": {
+        "customer_a": {
+          "customer_id": "customer_a",
+          "table_name": "contracts",
+          "column_name": "customer_name",
+          "data_type": "TEXT",
+          "semantic_type": "text",
+          "transformation": null,
+          "join_requirements": []
+        },
+        "customer_b": {
+          "customer_id": "customer_b",
+          "table_name": "contract_headers",
+          "column_name": "client_name",
+          "data_type": "TEXT",
+          "semantic_type": "text",
+          "transformation": null,
+          "join_requirements": []
+        },
+        "customer_c": {
+          "customer_id": "customer_c",
+          "table_name": "contracts",
+          "column_name": "account",
+          "data_type": "TEXT",
+          "semantic_type": "text",
+          "transformation": null,
+          "join_requirements": []
+        },
+        "customer_d": {
+          "customer_id": "customer_d",
+          "table_name": "contracts",
+          "column_name": "customer_org",
+          "data_type": "TEXT",
+          "semantic_type": "text",
+          "transformation": null,
+          "join_requirements": []
+        },
+        "customer_e": {
+          "customer_id": "customer_e",
+          "table_name": "contracts",
+          "column_name": "customer_name",
+          "data_type": "TEXT",
+          "semantic_type": "text",
+          "transformation": null,
+          "join_requirements": []
+        },
+        "customer_f": {
+          "customer_id": "customer_f",
+          "table_name": "contracts",
+          "column_name": "account",
+          "data_type": "TEXT",
+          "semantic_type": "text",
+          "transformation": null,
+          "join_requirements": []
+        }
+      }
+    },
+    "contract_start": {
+      "concept_id": "contract_start",
+      "concept_name": "Contract Start Date",
+      "description": "When the contract began or was signed",
+      "aliases": [
+        "start_date",
+        "inception_date",
+        "begin_date",
+        "effective_date"
+      ],
+      "customer_mappings": {
+        "customer_a": {
+          "customer_id": "customer_a",
+          "table_name": "contracts",
+          "column_name": "start_date",
+          "data_type": "TEXT",
+          "semantic_type": "date",
+          "transformation": null,
+          "join_requirements": []
+        },
+        "customer_b": {
+          "customer_id": "customer_b",
+          "table_name": "contract_headers",
+          "column_name": "start_date",
+          "data_type": "TEXT",
+          "semantic_type": "date",
+          "transformation": null,
+          "join_requirements": []
+        },
+        "customer_c": {
+          "customer_id": "customer_c",
+          "table_name": "contracts",
+          "column_name": "inception_date",
+          "data_type": "TEXT",
+          "semantic_type": "date",
+          "transformation": null,
+          "join_requirements": []
+        },
+        "customer_d": {
+          "customer_id": "customer_d",
+          "table_name": "contracts",
+          "column_name": "start_date",
+          "data_type": "TEXT",
+          "semantic_type": "date",
+          "transformation": null,
+          "join_requirements": []
+        },
+        "customer_e": {
+          "customer_id": "customer_e",
+          "table_name": "contracts",
+          "column_name": "start_date",
+          "data_type": "TEXT",
+          "semantic_type": "date",
+          "transformation": null,
+          "join_requirements": []
+        },
+        "customer_f": {
+          "customer_id": "customer_f",
+          "table_name": "contracts",
+          "column_name": "start_date",
+          "data_type": "TEXT",
+          "semantic_type": "date",
+          "transformation": null,
+          "join_requirements": []
+        }
+      }
+    },
+    "contract_name": {
+      "concept_id": "contract_name",
+      "concept_name": "Contract Name",
+      "description": "The name or title of the contract",
+      "aliases": [
+        "name",
+        "title",
+        "contract title",
+        "agreement name"
+      ],
+      "customer_mappings": {
+        "customer_a": {
+          "customer_id": "customer_a",
+          "table_name": "contracts",
+          "column_name": "contract_name",
+          "data_type": "TEXT",
+          "semantic_type": "text",
+          "transformation": null,
+          "join_requirements": []
+        },
+        "customer_b": {
+          "customer_id": "customer_b",
+          "table_name": "contract_headers",
+          "column_name": "name",
+          "data_type": "TEXT",
+          "semantic_type": "text",
+          "transformation": null,
+          "join_requirements": []
+        },
+        "customer_c": {
+          "customer_id": "customer_c",
+          "table_name": "contracts",
+          "column_name": "name",
+          "data_type": "TEXT",
+          "semantic_type": "text",
+          "transformation": null,
+          "join_requirements": []
+        },
+        "customer_d": {
+          "customer_id": "customer_d",
+          "table_name": "contracts",
+          "column_name": "name",
+          "data_type": "TEXT",
+          "semantic_type": "text",
+          "transformation": null,
+          "join_requirements": []
+        },
+        "customer_e": {
+          "customer_id": "customer_e",
+          "table_name": "contracts",
+          "column_name": "contract_title",
+          "data_type": "TEXT",
+          "semantic_type": "text",
+          "transformation": null,
+          "join_requirements": []
+        },
+        "customer_f": {
+          "customer_id": "customer_f",
+          "table_name": "contracts",
+          "column_name": "agreement_name",
+          "data_type": "TEXT",
+          "semantic_type": "text",
+          "transformation": null,
+          "join_requirements": []
+        }
+      }
+    }
+  },
+  "transformations": {
+    "days_remaining": {
+      "date": "DATE(CURRENT_DATE, '+' || {column} || ' days')"
+    },
+    "date": {
+      "days_remaining": "CAST((JULIANDAY({column}) - JULIANDAY(CURRENT_DATE)) AS INTEGER)"
+    },
+    "annual": {
+      "lifetime": "({column} * {term_years_column})"
+    },
+    "lifetime": {
+      "annual": "({column} / {term_years_column})"
+    }
+  }
+}

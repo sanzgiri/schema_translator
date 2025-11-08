@@ -5,7 +5,7 @@ import pytest
 from schema_translator.config import Config
 from schema_translator.knowledge_graph import SchemaKnowledgeGraph
 from schema_translator.models import QueryIntent, SemanticQueryPlan
-from schema_translator.orchestrator import ChatOrchestrator, QueryHistory
+from schema_translator.orchestrator import ChatOrchestrator
 
 
 @pytest.fixture
@@ -43,11 +43,11 @@ def orchestrator_llm(config, knowledge_graph):
 
 
 class TestQueryHistory:
-    """Tests for QueryHistory class."""
+    """Tests for query history functionality (now part of ChatOrchestrator)."""
     
-    def test_add_query(self):
+    def test_add_query(self, orchestrator_mock):
         """Test adding a query to history."""
-        history = QueryHistory()
+        orchestrator = orchestrator_mock
         
         plan = SemanticQueryPlan(
             intent=QueryIntent.FIND_CONTRACTS,
@@ -66,20 +66,20 @@ class TestQueryHistory:
             execution_time_ms=100.0
         )
         
-        history.add_query(
+        orchestrator._add_to_history(
             query_text="test query",
             semantic_plan=plan,
             result=result,
             execution_time_ms=100.0
         )
         
-        assert len(history.queries) == 1
-        assert history.queries[0]["query_text"] == "test query"
-        assert history.queries[0]["success"] is True
+        assert len(orchestrator.query_history) == 1
+        assert orchestrator.query_history[0]["query_text"] == "test query"
+        assert orchestrator.query_history[0]["success"] is True
     
-    def test_get_recent(self):
+    def test_get_recent(self, orchestrator_mock):
         """Test getting recent queries."""
-        history = QueryHistory()
+        orchestrator = orchestrator_mock
         
         plan = SemanticQueryPlan(
             intent=QueryIntent.FIND_CONTRACTS,
@@ -100,20 +100,20 @@ class TestQueryHistory:
         
         # Add 5 queries
         for i in range(5):
-            history.add_query(
+            orchestrator._add_to_history(
                 query_text=f"query {i}",
                 semantic_plan=plan,
                 result=result,
                 execution_time_ms=100.0
             )
         
-        recent = history.get_recent(3)
+        recent = orchestrator.get_query_history(3)
         assert len(recent) == 3
         assert recent[-1]["query_text"] == "query 4"
     
-    def test_get_failed_queries(self):
+    def test_get_failed_queries(self, orchestrator_mock):
         """Test getting failed queries."""
-        history = QueryHistory()
+        orchestrator = orchestrator_mock
         
         plan = SemanticQueryPlan(
             intent=QueryIntent.FIND_CONTRACTS,
@@ -133,7 +133,7 @@ class TestQueryHistory:
         )
         
         # Add successful query
-        history.add_query(
+        orchestrator._add_to_history(
             query_text="success",
             semantic_plan=plan,
             result=result,
@@ -141,7 +141,7 @@ class TestQueryHistory:
         )
         
         # Add failed query
-        history.add_query(
+        orchestrator._add_to_history(
             query_text="failure",
             semantic_plan=plan,
             result=result,
@@ -149,13 +149,13 @@ class TestQueryHistory:
             error="Test error"
         )
         
-        failed = history.get_failed_queries()
+        failed = orchestrator.get_failed_queries()
         assert len(failed) == 1
         assert failed[0]["query_text"] == "failure"
     
-    def test_get_statistics(self):
+    def test_get_statistics(self, orchestrator_mock):
         """Test getting query statistics."""
-        history = QueryHistory()
+        orchestrator = orchestrator_mock
         
         plan = SemanticQueryPlan(
             intent=QueryIntent.FIND_CONTRACTS,
@@ -176,14 +176,14 @@ class TestQueryHistory:
         
         # Add 3 successful, 1 failed
         for i in range(3):
-            history.add_query(
+            orchestrator._add_to_history(
                 query_text=f"query {i}",
                 semantic_plan=plan,
                 result=result,
                 execution_time_ms=100.0
             )
         
-        history.add_query(
+        orchestrator._add_to_history(
             query_text="failed",
             semantic_plan=plan,
             result=result,
@@ -191,7 +191,7 @@ class TestQueryHistory:
             error="Error"
         )
         
-        stats = history.get_statistics()
+        stats = orchestrator._get_query_statistics()
         assert stats["total_queries"] == 4
         assert stats["successful_queries"] == 3
         assert stats["failed_queries"] == 1

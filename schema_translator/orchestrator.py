@@ -27,86 +27,6 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-class QueryHistory:
-    """Maintains history of executed queries."""
-    
-    def __init__(self):
-        """Initialize query history."""
-        self.queries: List[Dict[str, Any]] = []
-    
-    def add_query(
-        self,
-        query_text: str,
-        semantic_plan: SemanticQueryPlan,
-        result: HarmonizedResult,
-        execution_time_ms: float,
-        error: Optional[str] = None
-    ):
-        """Add a query to history.
-        
-        Args:
-            query_text: Original natural language query
-            semantic_plan: Parsed semantic query plan
-            result: Query execution result
-            execution_time_ms: Total execution time
-            error: Error message if query failed
-        """
-        self.queries.append({
-            "timestamp": datetime.now(timezone.utc),
-            "query_text": query_text,
-            "semantic_plan": semantic_plan,
-            "result": result,
-            "execution_time_ms": execution_time_ms,
-            "error": error,
-            "success": error is None
-        })
-    
-    def get_recent(self, n: int = 10) -> List[Dict[str, Any]]:
-        """Get n most recent queries.
-        
-        Args:
-            n: Number of queries to return
-            
-        Returns:
-            List of recent query records
-        """
-        return self.queries[-n:]
-    
-    def get_failed_queries(self) -> List[Dict[str, Any]]:
-        """Get all failed queries.
-        
-        Returns:
-            List of failed query records
-        """
-        return [q for q in self.queries if not q["success"]]
-    
-    def get_statistics(self) -> Dict[str, Any]:
-        """Get query execution statistics.
-        
-        Returns:
-            Statistics dictionary
-        """
-        if not self.queries:
-            return {
-                "total_queries": 0,
-                "successful_queries": 0,
-                "failed_queries": 0,
-                "success_rate": 0.0,
-                "average_execution_time_ms": 0.0
-            }
-        
-        successful = [q for q in self.queries if q["success"]]
-        total_time = sum(q["execution_time_ms"] for q in self.queries)
-        
-        return {
-            "total_queries": len(self.queries),
-            "successful_queries": len(successful),
-            "failed_queries": len(self.queries) - len(successful),
-            "success_rate": len(successful) / len(self.queries) * 100,
-            "average_execution_time_ms": total_time / len(self.queries)
-        }
-
-
 class ChatOrchestrator:
     """Orchestrates all components for natural language query processing."""
     
@@ -157,7 +77,7 @@ class ChatOrchestrator:
             self.schema_agent = None
         
         # Initialize query history
-        self.history = QueryHistory()
+        self.query_history: List[Dict[str, Any]] = []
         
         # Initialize feedback loop
         self.feedback_loop = FeedbackLoop()
@@ -219,7 +139,7 @@ class ChatOrchestrator:
             )
             
             # Step 5: Add to history
-            self.history.add_query(
+            self._add_to_history(
                 query_text=query_text,
                 semantic_plan=semantic_plan,
                 result=result,
@@ -253,7 +173,7 @@ class ChatOrchestrator:
             logger.error(f"Query failed: {error_msg}", exc_info=True)
             
             # Add failed query to history
-            self.history.add_query(
+            self._add_to_history(
                 query_text=query_text,
                 semantic_plan=None,
                 result=None,
@@ -375,7 +295,15 @@ class ChatOrchestrator:
         Returns:
             List of query records
         """
-        return self.history.get_recent(n)
+        return self.query_history[-n:] if self.query_history else []
+    
+    def get_failed_queries(self) -> List[Dict[str, Any]]:
+        """Get all failed queries from history.
+        
+        Returns:
+            List of failed query records
+        """
+        return [q for q in self.query_history if not q["success"]]
     
     def get_statistics(self) -> Dict[str, Any]:
         """Get query execution statistics.
@@ -383,7 +311,7 @@ class ChatOrchestrator:
         Returns:
             Statistics dictionary
         """
-        stats = self.history.get_statistics()
+        stats = self._get_query_statistics()
         stats["knowledge_graph"] = self.knowledge_graph.get_stats()
         return stats
     
@@ -602,4 +530,59 @@ class ChatOrchestrator:
             "feedback_insights": feedback_insights,
             "drift_summary": drift_summary,
             "timestamp": datetime.now(timezone.utc).isoformat()
+        }
+    
+    # Private methods for query history management (formerly QueryHistory class)
+    
+    def _add_to_history(
+        self,
+        query_text: str,
+        semantic_plan: Optional[SemanticQueryPlan],
+        result: Optional[HarmonizedResult],
+        execution_time_ms: float,
+        error: Optional[str] = None
+    ):
+        """Add a query to history.
+        
+        Args:
+            query_text: Original natural language query
+            semantic_plan: Parsed semantic query plan
+            result: Query execution result
+            execution_time_ms: Total execution time
+            error: Error message if query failed
+        """
+        self.query_history.append({
+            "timestamp": datetime.now(timezone.utc),
+            "query_text": query_text,
+            "semantic_plan": semantic_plan,
+            "result": result,
+            "execution_time_ms": execution_time_ms,
+            "error": error,
+            "success": error is None
+        })
+    
+    def _get_query_statistics(self) -> Dict[str, Any]:
+        """Get query execution statistics.
+        
+        Returns:
+            Statistics dictionary
+        """
+        if not self.query_history:
+            return {
+                "total_queries": 0,
+                "successful_queries": 0,
+                "failed_queries": 0,
+                "success_rate": 0.0,
+                "average_execution_time_ms": 0.0
+            }
+        
+        successful = [q for q in self.query_history if q["success"]]
+        total_time = sum(q["execution_time_ms"] for q in self.query_history)
+        
+        return {
+            "total_queries": len(self.query_history),
+            "successful_queries": len(successful),
+            "failed_queries": len(self.query_history) - len(successful),
+            "success_rate": len(successful) / len(self.query_history) * 100,
+            "average_execution_time_ms": total_time / len(self.query_history)
         }

@@ -95,11 +95,20 @@ class QueryCompiler:
         tables = set()
         
         # Get tables from projections
-        for concept_id in query_plan.projections:
-            mapping = self.kg.get_mapping(concept_id, customer_id)
-            if mapping:
-                tables.add(mapping.table_name)
-                tables.update(mapping.join_requirements)
+        if query_plan.projections:
+            for concept_id in query_plan.projections:
+                mapping = self.kg.get_mapping(concept_id, customer_id)
+                if mapping:
+                    tables.add(mapping.table_name)
+                    tables.update(mapping.join_requirements)
+        else:
+            # If no projections specified (select all), get tables from all concepts
+            all_concepts = self.kg.get_all_concepts()
+            for concept in all_concepts:
+                mapping = self.kg.get_mapping(concept.concept_id, customer_id)
+                if mapping:
+                    tables.add(mapping.table_name)
+                    tables.update(mapping.join_requirements)
         
         # Get tables from filters
         for filter in query_plan.filters:

@@ -687,6 +687,7 @@ class ResultHarmonizer:
         """
         harmonized = {}
         
+        # First, map all fields that have concept mappings
         for customer_field, concept_id in field_mappings.items():
             if customer_field in row:
                 value = row[customer_field]
@@ -701,5 +702,13 @@ class ResultHarmonizer:
             else:
                 # Field not present in row
                 harmonized[concept_id] = None
+        
+        # Second, include any unmapped columns (like aggregation results)
+        # These are columns like count_contract_identifier, sum_contract_value, etc.
+        for field_name, value in row.items():
+            if field_name not in field_mappings:
+                # This is an unmapped column (likely an aggregation)
+                # Include it as-is with its original name
+                harmonized[field_name] = value
         
         return harmonized

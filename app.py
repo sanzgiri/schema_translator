@@ -45,44 +45,101 @@ def format_result_table(result, limit: int = 10) -> str:
     first_row = result.results[0]
     all_columns = list(first_row.data.keys())
     
-    # Define preferred field order and nice names
-    field_order = [
-        'contract_identifier',
-        'customer_name', 
-        'contract_name',
-        'industry_sector',
-        'contract_value',
-        'contract_status',
-        'contract_expiration'
-    ]
+    # Add source database to the data (from customer_id in HarmonizedRow)
+    # Convert customer_a -> A, customer_b -> B, etc. for display
+    for row in result.results:
+        if 'source_db' not in row.data:
+            # Extract letter from customer_id (customer_a -> A)
+            customer_letter = row.customer_id.replace('customer_', '').upper()
+            row.data['source_db'] = customer_letter
     
-    nice_names = {
-        'contract_identifier': 'Contract ID',
-        'contract_name': 'Contract Name',
-        'customer_name': 'Company',  # Changed from Customer to Company
-        'contract_value': 'Value',
-        'contract_status': 'Status',
-        'contract_expiration': 'Expiration',
-        'contract_start': 'Start Date',
-        'industry_sector': 'Industry'
-    }
+    # Add source_db to all_columns if not already there
+    if 'source_db' not in all_columns:
+        all_columns.insert(0, 'source_db')
     
-    # Order columns: preferred order first, then any remaining
-    columns = []
-    for field in field_order:
-        if field in all_columns:
-            columns.append(field)
-    
-    # Add any remaining columns not in preferred order
+    # Filter to only columns that have non-null values in at least one row
+    columns_with_values = set()
     for col in all_columns:
-        if col not in columns:
-            columns.append(col)
+        if any(row.data.get(col) is not None for row in result.results):
+            columns_with_values.add(col)
+    
+    # Check if multiple customers are being queried
+    multiple_customers = len(result.customers_queried) > 1
+    
+    # Always include source_db if querying multiple customers
+    if multiple_customers and 'source_db' not in columns_with_values:
+        columns_with_values.add('source_db')
+    
+    # Check if this is an aggregation/count query (no contract_identifier or all null)
+    is_aggregation = 'contract_identifier' not in columns_with_values
+    
+    if is_aggregation:
+        # For aggregations, show source_db first, then all other non-null columns
+        columns = []
+        if 'source_db' in columns_with_values:
+            columns.append('source_db')
+        for col in columns_with_values:
+            if col != 'source_db':
+                columns.append(col)
+        
+        # Nice names for aggregation fields
+        nice_names = {
+            'source_db': 'Customer',
+            'count_contract_identifier': 'Count',
+            'sum_contract_value': 'Total Value',
+            'avg_contract_value': 'Avg Value',
+            'max_contract_value': 'Max Value',
+            'min_contract_value': 'Min Value',
+            'count': 'Count',
+            'sum': 'Sum',
+            'average': 'Average',
+            'max': 'Max',
+            'min': 'Min'
+        }
+    else:
+        # For regular queries, use preferred field order (only for columns with values)
+        field_order = [
+            'source_db',  # Show which customer (A, B, C, etc.)
+            'contract_identifier',  # Contract ID
+            'contract_value',
+            'contract_status',
+            'contract_expiration',
+            'contract_start'
+        ]
+        
+        nice_names = {
+            'source_db': 'Customer',  # Which database (A, B, C, D, E, F)
+            'contract_identifier': 'Contract ID',
+            'contract_value': 'Value',
+            'contract_status': 'Status',
+            'contract_expiration': 'Expiration',
+            'contract_start': 'Start Date'
+        }
+        
+        # Order columns: preferred order first (only include if they have values)
+        columns = []
+        for field in field_order:
+            if field in columns_with_values:
+                columns.append(field)
+        
+        # Add any remaining columns not in preferred order (that have values)
+        for col in columns_with_values:
+            if col not in columns:
+                columns.append(col)
     
     # Build markdown table with better formatting
     lines = []
     
     # Header with nicer column names
-    display_cols = [nice_names.get(col, col) for col in columns]
+    display_cols = []
+    for col in columns:
+        # Get nice name or convert snake_case to Title Case
+        if col in nice_names:
+            display_cols.append(nice_names[col])
+        else:
+            # Convert snake_case to Title Case
+            display_cols.append(col.replace('_', ' ').title())
+    
     header = "| " + " | ".join(display_cols) + " |"
     separator = "|" + "|".join(["---" for _ in columns]) + "|"
     lines.append(header)
@@ -97,9 +154,17 @@ def format_result_table(result, limit: int = 10) -> str:
             # Format values for better display
             if val is None or val == "None":
                 val = "—"
-            elif isinstance(val, (int, float)) and col == 'contract_value':
-                # Format currency values
-                val = f"${val:,.0f}"
+            elif isinstance(val, (int, float)):
+                # Format numbers based on column type
+                if 'value' in col.lower() or 'sum' in col.lower():
+                    # Format currency values
+                    val = f"${val:,.0f}"
+                elif 'avg' in col.lower() or 'average' in col.lower():
+                    # Format averages with 2 decimals
+                    val = f"${val:,.2f}" if 'value' in col.lower() else f"{val:,.2f}"
+                else:
+                    # Format counts and other integers
+                    val = f"{val:,}"
             else:
                 val = str(val)
             values.append(val)
@@ -206,11 +271,15 @@ Welcome! I'm running in **{mode}**.
 I can help you query customer databases using natural language. Just ask me questions like:
 - "Show me all contracts"
 - "Find active contracts with value over 10000"
+- "Show contracts from customer A" or "from customer_a"
+- "List contracts in customer B and C"
 - "Count contracts by status"
-- "List all customers"
+
+**Note:** Results show Customer column (A, B, C, etc.) indicating which database each contract is from.
 
 ### Available Commands:
-- `/customers` - List available customers
+- `/customers` - List available databases (customer_a through customer_f)
+- `/select <customer_id>` - Query specific database (e.g., `/select customer_a`)
 - `/limit <number>` - Set max rows to display (default: 10)
 - `/debug on/off` - Toggle debug mode
 - `/stats` - Show query statistics
@@ -282,18 +351,32 @@ async def main(message: cl.Message):
             # Show available fields
             if result.results:
                 fields = list(result.results[0].data.keys())
+                # Filter out None values to get actual fields returned
+                actual_fields = [f for f in fields if any(
+                    row.data.get(f) is not None for row in result.results
+                )]
+                
                 field_names = {
+                    'source_db': 'Customer',
                     'contract_identifier': 'Contract ID',
-                    'contract_name': 'Contract Name',
-                    'customer_name': 'Company',  # Changed from Customer to Company
                     'contract_value': 'Value',
                     'contract_status': 'Status',
                     'contract_expiration': 'Expiration Date',
                     'contract_start': 'Start Date',
-                    'industry_sector': 'Industry'
+                    'count_contract_identifier': 'Count',
+                    'sum_contract_value': 'Total Value',
+                    'avg_contract_value': 'Avg Value',
+                    'max_contract_value': 'Max Value',
+                    'min_contract_value': 'Min Value'
                 }
-                field_list = ', '.join([f"`{field_names.get(f, f)}`" for f in fields])
-                content_parts.append(f"**Showing {len(fields)} fields:** {field_list}\n")
+                
+                field_display = []
+                for f in actual_fields:
+                    nice_name = field_names.get(f, f.replace('_', ' ').title())
+                    field_display.append(f"`{nice_name}`")
+                
+                field_list = ', '.join(field_display)
+                content_parts.append(f"**Showing {len(actual_fields)} fields:** {field_list}\n")
             
             # Results table
             content_parts.append("### ✅ Query Results")
@@ -408,14 +491,21 @@ async def handle_command(command: str, orchestrator: ChatOrchestrator, debug_mod
 **Example Queries:**
 - "Show me all contracts"
 - "Find active contracts"
+- "Show contracts from customer A" or "from customer_a"
+- "Query customer B and customer C databases"
 - "Count contracts by status"
 - "List contracts with value over 10000"
-- "Show contracts expiring soon"
+- "Show active contracts in customer_a expiring in 2026"
+
+**Important Notes:**
+- You can query specific customers by saying "customer A", "customer_a", "from customer B", etc.
+- Without specifying, queries run across all available databases
+- **Customer** column in results shows which database (A, B, C, etc.) each contract came from
 
 **Commands:**
-- `/customers` - List available customers
-- `/select <customer_id>` - Query specific customer(s)
-- `/select all` - Query all customers (default)
+- `/customers` - List available databases (customer_a through customer_f)
+- `/select <customer_id>` - Query specific database (e.g., `/select customer_a`)
+- `/select all` - Query all databases (default)
 - `/limit <number>` - Set max rows to display (default: 10)
 - `/debug on/off` - Toggle debug mode
 - `/stats` - Show query statistics
@@ -425,8 +515,8 @@ async def handle_command(command: str, orchestrator: ChatOrchestrator, debug_mod
 **Tips:**
 - Use natural language - I'll understand it!
 - Be specific about what you want to see
-- Use filters like "active", "over 1000", "expiring soon"
-- Enable debug mode to see SQL queries
+- Use filters like "active", "over 10000", "expiring in 90 days"
+- Enable debug mode to see SQL queries and semantic plans
 """
         await cl.Message(content=help_msg).send()
     

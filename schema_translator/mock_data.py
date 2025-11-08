@@ -108,22 +108,18 @@ class MockDataGenerator:
         conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
         
-        # Create table
+        # Create table (removed customer_name and industry - not in knowledge graph)
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS contracts (
                 contract_id INTEGER PRIMARY KEY,
-                contract_name TEXT NOT NULL,
-                customer_name TEXT NOT NULL,
                 contract_value INTEGER NOT NULL,
                 status TEXT NOT NULL,
                 expiry_date TEXT NOT NULL,
-                start_date TEXT NOT NULL,
-                industry TEXT NOT NULL
+                start_date TEXT NOT NULL
             )
         """)
         
         # Generate data
-        industries = self.INDUSTRIES["customer_a"]
         for i in range(1, 51):
             start_date, expiry_date = self.generate_dates()
             
@@ -135,18 +131,14 @@ class MockDataGenerator:
             
             cursor.execute("""
                 INSERT INTO contracts 
-                (contract_id, contract_name, customer_name, contract_value, status, 
-                 expiry_date, start_date, industry)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                (contract_id, contract_value, status, expiry_date, start_date)
+                VALUES (?, ?, ?, ?, ?)
             """, (
                 i,
-                self.generate_contract_name(i),
-                self.generate_company_name(),
                 self.generate_contract_value(is_annual=False),
                 status,
                 expiry_date.strftime("%Y-%m-%d"),
-                start_date.strftime("%Y-%m-%d"),
-                random.choice(industries)
+                start_date.strftime("%Y-%m-%d")
             ))
         
         conn.commit()
@@ -159,15 +151,12 @@ class MockDataGenerator:
         conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
         
-        # Create tables
+        # Create tables (removed client_name and sector)
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS contract_headers (
                 id INTEGER PRIMARY KEY,
-                contract_name TEXT NOT NULL,
-                client_name TEXT NOT NULL,
                 contract_value INTEGER NOT NULL,
-                start_date TEXT NOT NULL,
-                sector TEXT NOT NULL
+                start_date TEXT NOT NULL
             )
         """)
         
@@ -191,22 +180,18 @@ class MockDataGenerator:
         """)
         
         # Generate data
-        industries = self.INDUSTRIES["customer_b"]
         for i in range(1, 51):
             start_date, expiry_date = self.generate_dates()
             
             # Insert header
             cursor.execute("""
                 INSERT INTO contract_headers 
-                (id, contract_name, client_name, contract_value, start_date, sector)
-                VALUES (?, ?, ?, ?, ?, ?)
+                (id, contract_value, start_date)
+                VALUES (?, ?, ?)
             """, (
                 i,
-                self.generate_contract_name(i),
-                self.generate_company_name(),
                 self.generate_contract_value(is_annual=False),
-                start_date.strftime("%Y-%m-%d"),
-                random.choice(industries)
+                start_date.strftime("%Y-%m-%d")
             ))
             
             # Insert status history (1-3 status changes)
@@ -244,22 +229,18 @@ class MockDataGenerator:
         conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
         
-        # Create table with different column names
+        # Create table with different column names (removed account and business_sector)
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS contracts (
                 id INTEGER PRIMARY KEY,
-                name TEXT NOT NULL,
-                account TEXT NOT NULL,
                 total_value INTEGER NOT NULL,
                 current_status TEXT NOT NULL,
                 expiration_date TEXT NOT NULL,
-                inception_date TEXT NOT NULL,
-                business_sector TEXT NOT NULL
+                inception_date TEXT NOT NULL
             )
         """)
         
         # Generate data
-        industries = self.INDUSTRIES["customer_c"]
         for i in range(1, 51):
             start_date, expiry_date = self.generate_dates()
             
@@ -270,18 +251,14 @@ class MockDataGenerator:
             
             cursor.execute("""
                 INSERT INTO contracts 
-                (id, name, account, total_value, current_status, 
-                 expiration_date, inception_date, business_sector)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                (id, total_value, current_status, expiration_date, inception_date)
+                VALUES (?, ?, ?, ?, ?)
             """, (
                 i,
-                self.generate_contract_name(i),
-                self.generate_company_name(),
                 self.generate_contract_value(is_annual=False),
                 status,
                 expiry_date.strftime("%Y-%m-%d"),
-                start_date.strftime("%Y-%m-%d"),
-                random.choice(industries)
+                start_date.strftime("%Y-%m-%d")
             ))
         
         conn.commit()
@@ -294,22 +271,18 @@ class MockDataGenerator:
         conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
         
-        # Create table with days_remaining instead of date
+        # Create table with days_remaining instead of date (removed customer_org and industry)
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS contracts (
                 contract_id INTEGER PRIMARY KEY,
-                contract_title TEXT NOT NULL,
-                customer_org TEXT NOT NULL,
                 contract_value INTEGER NOT NULL,
                 status TEXT NOT NULL,
                 days_remaining INTEGER NOT NULL,
-                start_date TEXT NOT NULL,
-                industry TEXT NOT NULL
+                start_date TEXT NOT NULL
             )
         """)
         
         # Generate data
-        industries = self.INDUSTRIES["customer_d"]
         for i in range(1, 51):
             start_date, expiry_date = self.generate_dates()
             
@@ -323,18 +296,14 @@ class MockDataGenerator:
             
             cursor.execute("""
                 INSERT INTO contracts 
-                (contract_id, contract_title, customer_org, contract_value, status, 
-                 days_remaining, start_date, industry)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                (contract_id, contract_value, status, days_remaining, start_date)
+                VALUES (?, ?, ?, ?, ?)
             """, (
                 i,
-                self.generate_contract_name(i),
-                self.generate_company_name(),
                 self.generate_contract_value(is_annual=False),
                 status,
                 days_remaining,
-                start_date.strftime("%Y-%m-%d"),
-                random.choice(industries)
+                start_date.strftime("%Y-%m-%d")
             ))
         
         conn.commit()
@@ -347,23 +316,19 @@ class MockDataGenerator:
         conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
         
-        # Create table
+        # Create table (removed customer_name and industry)
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS contracts (
                 contract_id INTEGER PRIMARY KEY,
-                contract_name TEXT NOT NULL,
-                customer_name TEXT NOT NULL,
                 contract_value INTEGER NOT NULL,
                 term_years REAL NOT NULL,
                 status TEXT NOT NULL,
                 expiry_date TEXT NOT NULL,
-                start_date TEXT NOT NULL,
-                industry TEXT NOT NULL
+                start_date TEXT NOT NULL
             )
         """)
         
         # Generate data
-        industries = self.INDUSTRIES["customer_e"]
         for i in range(1, 51):
             start_date, expiry_date = self.generate_dates()
             
@@ -378,19 +343,15 @@ class MockDataGenerator:
             
             cursor.execute("""
                 INSERT INTO contracts 
-                (contract_id, contract_name, customer_name, contract_value, term_years,
-                 status, expiry_date, start_date, industry)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                (contract_id, contract_value, term_years, status, expiry_date, start_date)
+                VALUES (?, ?, ?, ?, ?, ?)
             """, (
                 i,
-                self.generate_contract_name(i),
-                self.generate_company_name(),
                 self.generate_contract_value(is_annual=False),
                 term_years,
                 status,
                 expiry_date.strftime("%Y-%m-%d"),
-                start_date.strftime("%Y-%m-%d"),
-                random.choice(industries)
+                start_date.strftime("%Y-%m-%d")
             ))
         
         conn.commit()
@@ -403,23 +364,19 @@ class MockDataGenerator:
         conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
         
-        # Create table
+        # Create table (removed account and sector)
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS contracts (
                 contract_id INTEGER PRIMARY KEY,
-                name TEXT NOT NULL,
-                account TEXT NOT NULL,
                 contract_value INTEGER NOT NULL,
                 term_years REAL NOT NULL,
                 status TEXT NOT NULL,
                 expiration_date TEXT NOT NULL,
-                start_date TEXT NOT NULL,
-                sector TEXT NOT NULL
+                start_date TEXT NOT NULL
             )
         """)
         
         # Generate data
-        industries = self.INDUSTRIES["customer_f"]
         for i in range(1, 51):
             start_date, expiry_date = self.generate_dates()
             
@@ -434,19 +391,15 @@ class MockDataGenerator:
             
             cursor.execute("""
                 INSERT INTO contracts 
-                (contract_id, name, account, contract_value, term_years,
-                 status, expiration_date, start_date, sector)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                (contract_id, contract_value, term_years, status, expiration_date, start_date)
+                VALUES (?, ?, ?, ?, ?, ?)
             """, (
                 i,
-                self.generate_contract_name(i),
-                self.generate_company_name(),
                 self.generate_contract_value(is_annual=True),  # ANNUAL value
                 term_years,
                 status,
                 expiry_date.strftime("%Y-%m-%d"),
-                start_date.strftime("%Y-%m-%d"),
-                random.choice(industries)
+                start_date.strftime("%Y-%m-%d")
             ))
         
         conn.commit()

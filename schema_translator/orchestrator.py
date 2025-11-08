@@ -122,14 +122,21 @@ class ChatOrchestrator:
             if debug:
                 logger.info(f"Semantic plan: {semantic_plan}")
             
-            # Step 3: Execute query across customers
-            logger.info(f"Executing query across {len(customer_ids) if customer_ids else 'all'} customers...")
+            # Step 3: Determine which customers to query
+            # Priority: explicit customer_ids parameter > target_customers from query > all customers
+            target_customers = customer_ids
+            if target_customers is None and semantic_plan.target_customers:
+                target_customers = semantic_plan.target_customers
+                logger.info(f"Extracted target customers from query: {target_customers}")
+            
+            # Step 4: Execute query across customers
+            logger.info(f"Executing query across {len(target_customers) if target_customers else 'all'} customers...")
             result = self.result_harmonizer.execute_across_customers(
                 semantic_plan,
-                customer_ids=customer_ids
+                customer_ids=target_customers
             )
             
-            # Step 4: Calculate total execution time
+            # Step 5: Calculate total execution time
             total_time_ms = (time.time() - start_time) * 1000
             
             logger.info(
@@ -138,7 +145,7 @@ class ChatOrchestrator:
                 f"{total_time_ms:.2f}ms"
             )
             
-            # Step 5: Add to history
+            # Step 6: Add to history
             self._add_to_history(
                 query_text=query_text,
                 semantic_plan=semantic_plan,
@@ -147,7 +154,7 @@ class ChatOrchestrator:
                 error=None
             )
             
-            # Step 6: Build response
+            # Step 7: Build response
             response = {
                 "success": True,
                 "query_text": query_text,

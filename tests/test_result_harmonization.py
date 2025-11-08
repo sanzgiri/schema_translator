@@ -157,21 +157,21 @@ class TestValueHarmonizer:
         assert harmonized["contract_status"] == "Active"
         assert harmonized["contract_value"] == 100000.0
     
-    def test_harmonize_row_with_industry(self, result_harmonizer):
-        """Test harmonizing a row with industry normalization."""
+    def test_harmonize_row_with_status(self, result_harmonizer):
+        """Test harmonizing a row with status normalization."""
         row = {
             "contract_id": "A001",
-            "industry": "tech"
+            "status": "active"
         }
         
         field_mappings = {
             "contract_id": "contract_identifier",
-            "industry": "industry_sector"
+            "status": "contract_status"
         }
         
         harmonized = result_harmonizer._harmonize_row(row, "customer_a", field_mappings)
         
-        assert harmonized["industry_sector"] == "Technology"
+        assert harmonized["contract_status"] == "active"
 
 
 class TestResultHarmonizer:
@@ -393,20 +393,20 @@ class TestResultHarmonizer:
         assert all(row.data["contract_status"] == "Active" for row in filtered_result.results)
     
     def test_aggregate_results_count(self, result_harmonizer):
-        """Test aggregating results with count."""
+        """Test aggregating results with count by status."""
         harmonized = HarmonizedResult(
             results=[
                 HarmonizedRow(
                     customer_id="customer_a",
-                    data={"industry_sector": "Technology", "contract_value": 100000}
+                    data={"contract_status": "active", "contract_value": 100000}
                 ),
                 HarmonizedRow(
                     customer_id="customer_a",
-                    data={"industry_sector": "Technology", "contract_value": 200000}
+                    data={"contract_status": "active", "contract_value": 200000}
                 ),
                 HarmonizedRow(
                     customer_id="customer_a",
-                    data={"industry_sector": "Healthcare", "contract_value": 150000}
+                    data={"contract_status": "inactive", "contract_value": 150000}
                 ),
             ],
             total_count=3,
@@ -417,19 +417,19 @@ class TestResultHarmonizer:
         
         aggregated = result_harmonizer.aggregate_results(
             harmonized,
-            group_by=["industry_sector"],
+            group_by=["contract_status"],
             aggregations={"contract_value": "count"}
         )
         
-        assert aggregated.total_count == 2  # Two industries
+        assert aggregated.total_count == 2  # Two statuses
         
-        # Find Technology group
-        tech_row = next(
-            (r for r in aggregated.results if r.data.get("industry_sector") == "Technology"),
+        # Find active group
+        active_row = next(
+            (r for r in aggregated.results if r.data.get("contract_status") == "active"),
             None
         )
-        assert tech_row is not None
-        assert tech_row.data["contract_value_count"] == 2
+        assert active_row is not None
+        assert active_row.data["contract_value_count"] == 2
     
     def test_aggregate_results_sum(self, result_harmonizer):
         """Test aggregating results with sum."""
@@ -437,11 +437,11 @@ class TestResultHarmonizer:
             results=[
                 HarmonizedRow(
                     customer_id="customer_a",
-                    data={"industry_sector": "Technology", "contract_value": 100000}
+                    data={"contract_status": "active", "contract_value": 100000}
                 ),
                 HarmonizedRow(
                     customer_id="customer_a",
-                    data={"industry_sector": "Technology", "contract_value": 200000}
+                    data={"contract_status": "active", "contract_value": 200000}
                 ),
             ],
             total_count=2,
@@ -452,7 +452,7 @@ class TestResultHarmonizer:
         
         aggregated = result_harmonizer.aggregate_results(
             harmonized,
-            group_by=["industry_sector"],
+            group_by=["contract_status"],
             aggregations={"contract_value": "sum"}
         )
         
@@ -465,11 +465,11 @@ class TestResultHarmonizer:
             results=[
                 HarmonizedRow(
                     customer_id="customer_a",
-                    data={"industry_sector": "Technology", "contract_value": 100000}
+                    data={"contract_status": "active", "contract_value": 100000}
                 ),
                 HarmonizedRow(
                     customer_id="customer_a",
-                    data={"industry_sector": "Technology", "contract_value": 200000}
+                    data={"contract_status": "active", "contract_value": 200000}
                 ),
             ],
             total_count=2,
@@ -480,7 +480,7 @@ class TestResultHarmonizer:
         
         aggregated = result_harmonizer.aggregate_results(
             harmonized,
-            group_by=["industry_sector"],
+            group_by=["contract_status"],
             aggregations={"contract_value": "avg"}
         )
         

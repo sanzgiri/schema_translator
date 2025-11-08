@@ -90,8 +90,8 @@ class SchemaTable(BaseModel):
 
 class CustomerSchema(BaseModel):
     """Represents the complete schema for a customer database."""
-    customer_id: str = Field(..., description="Unique customer identifier")
-    customer_name: str = Field(..., description="Customer display name")
+    customer_id: str = Field(..., description="Unique customer identifier (e.g., customer_a)")
+    customer_name: Optional[str] = Field(None, description="Optional customer display name")
     tables: List[SchemaTable] = Field(..., description="Tables in this schema")
     semantic_notes: Dict[str, str] = Field(
         default_factory=dict,
@@ -170,6 +170,10 @@ class SemanticQueryPlan(BaseModel):
         description="Ordering (concept, direction) pairs"
     )
     limit: Optional[int] = Field(None, description="Maximum number of results")
+    target_customers: Optional[List[str]] = Field(
+        None, 
+        description="Specific customer databases to query (e.g., ['customer_a', 'customer_b']). None means all customers."
+    )
     
     model_config = {"use_enum_values": True}
 

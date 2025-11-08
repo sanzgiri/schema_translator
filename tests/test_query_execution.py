@@ -151,16 +151,16 @@ class TestQueryCompiler:
         
         assert "LIMIT 10" in sql
     
-    def test_industry_filter(self, compiler):
-        """Test filtering by industry."""
+    def test_status_filter(self, compiler):
+        """Test filtering by contract status."""
         plan = SemanticQueryPlan(
             intent=QueryIntent.FIND_CONTRACTS,
-            projections=["contract_identifier", "industry_sector"],
+            projections=["contract_identifier", "contract_status"],
             filters=[
                 QueryFilter(
-                    concept="industry_sector",
+                    concept="contract_status",
                     operator=QueryOperator.EQUALS,
-                    value="Technology"
+                    value="active"
                 )
             ]
         )
@@ -168,8 +168,8 @@ class TestQueryCompiler:
         sql = compiler.compile_for_customer(plan, "customer_a")
         
         assert "WHERE" in sql
-        assert "industry" in sql
-        assert "Technology" in sql
+        assert "status" in sql
+        assert "active" in sql
 
 
 class TestDatabaseExecutor:
@@ -182,7 +182,7 @@ class TestDatabaseExecutor:
     
     def test_simple_query(self, executor):
         """Test executing a simple query."""
-        sql = "SELECT contract_id, contract_name FROM contracts LIMIT 5"
+        sql = "SELECT contract_id, contract_value FROM contracts LIMIT 5"
         result = executor.execute_query("customer_a", sql)
         
         assert result.success
@@ -197,7 +197,7 @@ class TestDatabaseExecutor:
         
         assert result.success
         assert result.row_count == 1
-        assert result.data[0]["count"] == 100
+        assert result.data[0]["count"] == 50  # 50 contracts per database
     
     def test_invalid_sql(self, executor):
         """Test handling of invalid SQL."""
@@ -223,12 +223,12 @@ class TestDatabaseExecutor:
     def test_count_rows(self, executor):
         """Test counting rows in a table."""
         count = executor.count_rows("customer_a", "contracts")
-        assert count == 100
+        assert count == 50  # 50 contracts per database
     
     def test_customer_b_multi_table(self, executor):
         """Test querying Customer B's multi-table schema."""
         sql = """
-            SELECT h.id, h.contract_name, r.renewal_date
+            SELECT h.id, h.contract_value, r.renewal_date
             FROM contract_headers AS h
             JOIN renewal_schedule AS r ON h.id = r.contract_id
             LIMIT 5
@@ -262,7 +262,7 @@ class TestIntegration:
         # Create query plan
         plan = SemanticQueryPlan(
             intent=QueryIntent.FIND_CONTRACTS,
-            projections=["contract_identifier", "contract_value", "customer_name"],
+            projections=["contract_identifier", "contract_value", "contract_status"],
             filters=[],
             limit=10
         )
@@ -355,7 +355,7 @@ class TestIntegration:
         """Test executing the same semantic query across all customers."""
         plan = SemanticQueryPlan(
             intent=QueryIntent.FIND_CONTRACTS,
-            projections=["contract_identifier", "contract_value", "customer_name"],
+            projections=["contract_identifier", "contract_value", "contract_status"],
             filters=[],
             limit=5
         )

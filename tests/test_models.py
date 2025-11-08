@@ -89,7 +89,6 @@ class TestSchemaModels:
         
         schema = CustomerSchema(
             customer_id="customer_a",
-            customer_name="Customer A",
             tables=[table],
             semantic_notes={"contract_value": "lifetime total"}
         )

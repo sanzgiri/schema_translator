@@ -98,11 +98,11 @@ class TestQueryUnderstandingAgent:
 
     def test_multi_filter_query(self, query_agent):
         """Test parsing a query with multiple filters."""
-        query = "List technology contracts expiring in 2026"
+        query = "List active contracts worth more than 1 million expiring in 2026"
         plan = query_agent.understand_query(query)
 
         assert plan.intent == QueryIntent.FIND_CONTRACTS
-        assert len(plan.filters) >= 2
+        assert len(plan.filters) >= 2  # Should have status + value + date filters
 
     def test_explain_query_plan(self, query_agent):
         """Test generating human-readable explanations."""
@@ -122,7 +122,6 @@ class TestSchemaAnalyzerAgent:
         # Create a simple test schema
         schema = CustomerSchema(
             customer_id="test_customer",
-            customer_name="Test Customer",
             tables=[
                 SchemaTable(
                     name="contracts",
@@ -173,7 +172,6 @@ class TestSchemaAnalyzerAgent:
 
         schema = CustomerSchema(
             customer_id="test_customer",
-            customer_name="Test Customer",
             tables=[
                 SchemaTable(
                     name="contracts",
@@ -301,7 +299,6 @@ class TestEndToEndAgent:
         # Create a test schema
         schema = CustomerSchema(
             customer_id="test_new_customer",
-            customer_name="Test New Customer",
             tables=[
                 SchemaTable(
                     name="agreements",

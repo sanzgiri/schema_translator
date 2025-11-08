@@ -269,12 +269,13 @@ class TestLoadedKnowledgeGraph:
         kg = SchemaKnowledgeGraph()
         kg.load()
         
-        # Check concepts exist (8 concepts including contract_name)
-        assert len(kg.concepts) == 8
+        # Check concepts exist (5 concepts, removed customer_name and industry_sector)
+        assert len(kg.concepts) == 5
         assert kg.get_concept("contract_identifier") is not None
-        assert kg.get_concept("contract_name") is not None
         assert kg.get_concept("contract_value") is not None
         assert kg.get_concept("contract_expiration") is not None
+        assert kg.get_concept("contract_status") is not None
+        assert kg.get_concept("contract_start") is not None
     
     def test_all_customers_mapped(self):
         """Test that all 6 customers have mappings."""

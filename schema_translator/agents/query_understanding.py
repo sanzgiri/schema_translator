@@ -43,6 +43,18 @@ class QueryUnderstandingAgent:
 Available Semantic Concepts:
 {concept_list}
 
+CRITICAL RULE - Database Selection:
+When users mention "customer" or database references, extract them into target_customers field:
+- "customer_a", "customer_b", "customer_c", "customer_d", "customer_e", "customer_f"
+- "customer A", "customer B", "database A", "from customer_a", "customer a database"
+- Any reference to which specific database(s) to query
+
+DO NOT create semantic filters for these - use the target_customers field instead.
+Examples:
+- "Show contracts from customer_a" → target_customers: ["customer_a"]
+- "Query customer A and B" → target_customers: ["customer_a", "customer_b"]  
+- "Show all contracts" → target_customers: null (means query all)
+
 Your task is to:
 1. Identify the user's query intent (find_contracts, count_contracts, aggregate_values)
 2. Determine which semantic concepts are relevant
@@ -88,7 +100,8 @@ Return ONLY valid JSON matching this schema:
         "function": "count" | "sum" | "average",
         "concept": "concept_name"
     }}],  // optional, for aggregate_values intent
-    "limit": 10  // optional, for find_contracts intent
+    "limit": 10,  // optional, for find_contracts intent
+    "target_customers": ["customer_a", "customer_b"]  // optional, null or omit for all customers
 }}
 
 IMPORTANT: 
@@ -110,7 +123,8 @@ Result:
     "intent": "find_contracts",
     "filters": [],
     "projections": [],  // Empty projections means return ALL available fields
-    "limit": 100
+    "limit": 100,
+    "target_customers": null  // null means query all customers
 }}
 
 Query: "Show me all active contracts"
@@ -125,7 +139,18 @@ Result:
         }}
     ],
     "projections": [],  // Empty projections means return ALL available fields
-    "limit": 100
+    "limit": 100,
+    "target_customers": null
+}}
+
+Query: "Show contracts from customer_a" or "Query customer A database"
+Result:
+{{
+    "intent": "find_contracts",
+    "filters": [],
+    "projections": [],
+    "limit": 100,
+    "target_customers": ["customer_a"]  // Extract database reference
 }}
 
 Query: "How many contracts expire in the next 90 days?"
@@ -156,26 +181,21 @@ Result:
             "value": 2000000
         }}
     ],
-    "projections": ["contract_identifier", "contract_value", "customer_name"]
+    "projections": ["contract_identifier", "contract_value", "contract_status"]
 }}
 
-Query: "List technology contracts expiring in 2026"
+Query: "List contracts expiring in 2026"
 Result:
 {{
     "intent": "find_contracts",
     "filters": [
-        {{
-            "concept": "industry_sector",
-            "operator": "equals",
-            "value": "Technology"
-        }},
         {{
             "concept": "contract_expiration",
             "operator": "between",
             "value": ["2026-01-01", "2026-12-31"]
         }}
     ],
-    "projections": ["contract_identifier", "industry_sector", "contract_expiration"],
+    "projections": ["contract_identifier", "contract_expiration", "contract_value"],
     "limit": 50
 }}
 

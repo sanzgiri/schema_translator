@@ -98,12 +98,15 @@ def format_debug_info(debug: Dict[str, Any]) -> str:
     Returns:
         Formatted debug info
     """
+    projections = debug['semantic_plan']['projections']
+    proj_list = ', '.join(f'`{p}`' for p in projections) if projections else "*(none - SELECT ALL)*"
+    
     lines = [
         "### 🔍 Debug Information",
         "",
         "**Semantic Plan:**",
         f"- Intent: `{debug['semantic_plan']['intent']}`",
-        f"- Projections: {', '.join(f'`{p}`' for p in debug['semantic_plan']['projections'])}",
+        f"- Projections ({len(projections)}): {proj_list}",
     ]
     
     if debug['semantic_plan']['filters']:
@@ -113,6 +116,12 @@ def format_debug_info(debug: Dict[str, Any]) -> str:
     
     if debug['semantic_plan']['aggregations']:
         lines.append(f"- Aggregations: {', '.join(debug['semantic_plan']['aggregations'])}")
+    
+    # Show actual columns returned
+    if 'actual_columns' in debug:
+        actual_cols = ', '.join(f'`{c}`' for c in debug['actual_columns'])
+        lines.append(f"\n**Actual Columns Returned ({len(debug['actual_columns'])}):**")
+        lines.append(actual_cols)
     
     # Show sample SQL for first customer
     lines.append("\n**Sample SQL (first customer):**")
@@ -237,7 +246,11 @@ async def main(message: cl.Message):
             
             # Debug info if enabled
             if debug_mode and 'debug' in response:
-                content_parts.append("\n" + format_debug_info(response['debug']))
+                # Add actual columns returned
+                actual_columns = list(result.results[0].data.keys()) if result.results else []
+                debug_with_columns = response['debug'].copy()
+                debug_with_columns['actual_columns'] = actual_columns
+                content_parts.append("\n" + format_debug_info(debug_with_columns))
             
             # Remove processing message and send result
             await processing_msg.remove()

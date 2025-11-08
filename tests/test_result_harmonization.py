@@ -17,7 +17,6 @@ from schema_translator.models import (
     SemanticType,
 )
 from schema_translator.result_harmonizer import ResultHarmonizer
-from schema_translator.value_harmonizer import ValueHarmonizer
 
 
 @pytest.fixture
@@ -35,23 +34,17 @@ def knowledge_graph(config):
 
 
 @pytest.fixture
-def value_harmonizer(knowledge_graph):
-    """Create a value harmonizer."""
-    return ValueHarmonizer(knowledge_graph)
-
-
-@pytest.fixture
 def result_harmonizer(knowledge_graph):
     """Create a result harmonizer."""
     return ResultHarmonizer(knowledge_graph)
 
 
 class TestValueHarmonizer:
-    """Tests for ValueHarmonizer class."""
+    """Tests for value normalization (now part of ResultHarmonizer)."""
     
-    def test_normalize_value_no_transformation(self, value_harmonizer):
+    def test_normalize_value_no_transformation(self, result_harmonizer):
         """Test normalizing a value with no transformation."""
-        normalized = value_harmonizer.normalize_value(
+        normalized = result_harmonizer._normalize_value(
             value="Active",
             customer_id="customer_a",
             concept_id="contract_status"
@@ -62,10 +55,10 @@ class TestValueHarmonizer:
         assert normalized.original_type == "text"
         assert normalized.transformation_applied is None
     
-    def test_normalize_value_with_transformation(self, value_harmonizer):
+    def test_normalize_value_with_transformation(self, result_harmonizer):
         """Test normalizing a value that requires transformation."""
         # Customer D uses days_remaining instead of end_date
-        normalized = value_harmonizer.normalize_value(
+        normalized = result_harmonizer._normalize_value(
             value=365,
             customer_id="customer_d",
             concept_id="contract_expiration"
@@ -78,23 +71,23 @@ class TestValueHarmonizer:
         assert normalized.normalized_value is not None
         assert "-" in str(normalized.normalized_value)  # Date format
     
-    def test_days_to_date_conversion(self, value_harmonizer):
+    def test_days_to_date_conversion(self, result_harmonizer):
         """Test converting days remaining to a date."""
         # 30 days from now
-        date_str = value_harmonizer._days_to_date(30)
+        date_str = result_harmonizer._days_to_date(30)
         
         assert date_str is not None
         assert len(date_str) == 10  # YYYY-MM-DD format
         assert date_str.count("-") == 2
     
-    def test_days_to_date_invalid(self, value_harmonizer):
+    def test_days_to_date_invalid(self, result_harmonizer):
         """Test days to date with invalid input."""
-        assert value_harmonizer._days_to_date(None) is None
-        assert value_harmonizer._days_to_date("invalid") is None
+        assert result_harmonizer._days_to_date(None) is None
+        assert result_harmonizer._days_to_date("invalid") is None
     
-    def test_convert_type_int_to_float(self, value_harmonizer):
+    def test_convert_type_int_to_float(self, result_harmonizer):
         """Test type conversion from integer to float."""
-        result = value_harmonizer._convert_type(
+        result = result_harmonizer._convert_type(
             100,
             SemanticType.INTEGER,
             SemanticType.FLOAT
@@ -103,9 +96,9 @@ class TestValueHarmonizer:
         assert isinstance(result, float)
         assert result == 100.0
     
-    def test_convert_type_float_to_int(self, value_harmonizer):
+    def test_convert_type_float_to_int(self, result_harmonizer):
         """Test type conversion from float to integer."""
-        result = value_harmonizer._convert_type(
+        result = result_harmonizer._convert_type(
             99.9,
             SemanticType.FLOAT,
             SemanticType.INTEGER
@@ -114,9 +107,9 @@ class TestValueHarmonizer:
         assert isinstance(result, int)
         assert result == 99
     
-    def test_convert_type_to_text(self, value_harmonizer):
+    def test_convert_type_to_text(self, result_harmonizer):
         """Test type conversion to text."""
-        result = value_harmonizer._convert_type(
+        result = result_harmonizer._convert_type(
             123,
             SemanticType.INTEGER,
             SemanticType.TEXT
@@ -125,26 +118,26 @@ class TestValueHarmonizer:
         assert isinstance(result, str)
         assert result == "123"
     
-    def test_normalize_industry_name(self, value_harmonizer):
+    def test_normalize_industry_name(self, result_harmonizer):
         """Test normalizing industry names."""
-        assert value_harmonizer.normalize_industry_name("tech") == "Technology"
-        assert value_harmonizer.normalize_industry_name("TECHNOLOGY") == "Technology"
-        assert value_harmonizer.normalize_industry_name("healthcare") == "Healthcare"
-        assert value_harmonizer.normalize_industry_name("finance") == "Financial Services"
-        assert value_harmonizer.normalize_industry_name("Unknown Industry") == "Unknown Industry"
-        assert value_harmonizer.normalize_industry_name(None) is None
+        assert result_harmonizer._normalize_industry_name("tech") == "Technology"
+        assert result_harmonizer._normalize_industry_name("TECHNOLOGY") == "Technology"
+        assert result_harmonizer._normalize_industry_name("healthcare") == "Healthcare"
+        assert result_harmonizer._normalize_industry_name("finance") == "Financial Services"
+        assert result_harmonizer._normalize_industry_name("Unknown Industry") == "Unknown Industry"
+        assert result_harmonizer._normalize_industry_name(None) is None
     
-    def test_normalize_field_name(self, value_harmonizer):
+    def test_normalize_field_name(self, result_harmonizer):
         """Test mapping customer field names to concepts."""
         # Customer A uses 'contract_id'
-        concept = value_harmonizer.normalize_field_name("contract_id", "customer_a")
+        concept = result_harmonizer._normalize_field_name("contract_id", "customer_a")
         assert concept == "contract_identifier"
         
         # Customer B uses 'id' for contract_identifier
-        concept = value_harmonizer.normalize_field_name("id", "customer_b")
+        concept = result_harmonizer._normalize_field_name("id", "customer_b")
         assert concept == "contract_identifier"
     
-    def test_harmonize_row(self, value_harmonizer):
+    def test_harmonize_row(self, result_harmonizer):
         """Test harmonizing a complete row."""
         row = {
             "contract_id": "A001",
@@ -158,13 +151,13 @@ class TestValueHarmonizer:
             "contract_value": "contract_value"
         }
         
-        harmonized = value_harmonizer.harmonize_row(row, "customer_a", field_mappings)
+        harmonized = result_harmonizer._harmonize_row(row, "customer_a", field_mappings)
         
         assert harmonized["contract_identifier"] == "A001"
         assert harmonized["contract_status"] == "Active"
         assert harmonized["contract_value"] == 100000.0
     
-    def test_harmonize_row_with_industry(self, value_harmonizer):
+    def test_harmonize_row_with_industry(self, result_harmonizer):
         """Test harmonizing a row with industry normalization."""
         row = {
             "contract_id": "A001",
@@ -176,7 +169,7 @@ class TestValueHarmonizer:
             "industry": "industry_sector"
         }
         
-        harmonized = value_harmonizer.harmonize_row(row, "customer_a", field_mappings)
+        harmonized = result_harmonizer._harmonize_row(row, "customer_a", field_mappings)
         
         assert harmonized["industry_sector"] == "Technology"
 

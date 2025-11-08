@@ -54,19 +54,13 @@ class Config(BaseSettings):
         description="Path to knowledge graph JSON file"
     )
     
-    # Query History Configuration
-    query_history_path: Path = Field(
-        default=Path("./query_history.json"),
-        description="Path to query history JSON file"
-    )
-    
     # Logging Configuration
     log_level: str = Field(
         default="INFO",
         description="Logging level"
     )
     
-    @field_validator("database_dir", "knowledge_graph_path", "query_history_path", mode="before")
+    @field_validator("database_dir", "knowledge_graph_path", mode="before")
     @classmethod
     def convert_to_path(cls, v) -> Path:
         """Convert string paths to Path objects."""
@@ -97,7 +91,6 @@ class Config(BaseSettings):
         
         # Ensure parent directories exist for other paths
         self.knowledge_graph_path.parent.mkdir(parents=True, exist_ok=True)
-        self.query_history_path.parent.mkdir(parents=True, exist_ok=True)
     
     def get_database_path(self, customer_id: str) -> Path:
         """Get path to a specific customer database.

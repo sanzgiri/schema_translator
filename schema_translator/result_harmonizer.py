@@ -245,6 +245,11 @@ class ResultHarmonizer:
         # Add projected concepts
         if query_plan.projections:
             concepts.update(query_plan.projections)
+        else:
+            # If no projections specified (SELECT *), include all available concepts
+            # This ensures all fields are harmonized when user asks for "all" data
+            all_concepts = self.knowledge_graph.get_all_concepts()
+            concepts.update([c.concept_id for c in all_concepts])
         
         # Add filtered concepts
         if query_plan.filters:

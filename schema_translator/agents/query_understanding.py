@@ -83,13 +83,18 @@ Return ONLY valid JSON matching this schema:
             "semantic_type": "text" | "integer" | "float" | "date" | "boolean"
         }}
     ],
-    "projections": ["concept1", "concept2"],  // concepts to return in results
+    "projections": ["concept1", "concept2"],  // List specific fields, or [] for ALL fields
     "aggregations": [{{
         "function": "count" | "sum" | "average",
         "concept": "concept_name"
     }}],  // optional, for aggregate_values intent
     "limit": 10  // optional, for find_contracts intent
-}}"""
+}}
+
+IMPORTANT: 
+- If user asks for "all contracts", "show me contracts", or doesn't specify which fields, use EMPTY projections list []
+- Empty projections [] means return ALL available fields
+- Only specify projections when user explicitly asks for specific fields"""
 
     def _build_user_prompt(self, natural_language_query: str) -> str:
         """Build the user prompt with examples."""
@@ -98,6 +103,15 @@ Return ONLY valid JSON matching this schema:
 "{natural_language_query}"
 
 Examples:
+
+Query: "Show me all contracts" or "List all contracts"
+Result:
+{{
+    "intent": "find_contracts",
+    "filters": [],
+    "projections": [],  // Empty projections means return ALL available fields
+    "limit": 100
+}}
 
 Query: "Show me all active contracts"
 Result:
@@ -110,7 +124,7 @@ Result:
             "value": "active"
         }}
     ],
-    "projections": ["contract_identifier", "contract_status", "contract_value"],
+    "projections": [],  // Empty projections means return ALL available fields
     "limit": 100
 }}
 

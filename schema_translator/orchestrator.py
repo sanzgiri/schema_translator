@@ -253,7 +253,7 @@ class ChatOrchestrator:
                 "filters": [
                     {
                         "concept": f.concept,
-                        "operator": f.operator.value,
+                        "operator": f.operator.value if hasattr(f.operator, 'value') else str(f.operator),
                         "value": f.value
                     }
                     for f in (semantic_plan.filters or [])

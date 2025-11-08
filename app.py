@@ -245,13 +245,13 @@ async def main(message: cl.Message):
             
             # Add action buttons
             actions = [
-                cl.Action(name="explain", value="explain", label="📖 Explain Query"),
-                cl.Action(name="feedback_good", value="good", label="👍 Good Result"),
-                cl.Action(name="feedback_bad", value="incorrect", label="👎 Incorrect Result"),
+                cl.Action(name="explain", payload="explain", label="📖 Explain Query"),
+                cl.Action(name="feedback_good", payload="good", label="👍 Good Result"),
+                cl.Action(name="feedback_bad", payload="incorrect", label="👎 Incorrect Result"),
             ]
             
             if not debug_mode:
-                actions.insert(0, cl.Action(name="debug", value="debug", label="🔍 Show Debug Info"))
+                actions.insert(0, cl.Action(name="debug", payload="debug", label="🔍 Show Debug Info"))
             
             await cl.Message(content="", actions=actions).send()
             

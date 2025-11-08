@@ -1,0 +1,39 @@
+/* Custom styles for Schema Translator Chainlit UI */
+
+/* Increase max width of chat messages to show more table columns */
+.step {
+    max-width: 1400px !important;
+}
+
+/* Make table scrollable horizontally if needed */
+.message-content table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+    font-size: 13px;
+    max-width: 100%;
+}
+
+/* Adjust table cell padding for more compact display */
+.message-content table td,
+.message-content table th {
+    padding: 6px 10px;
+    font-size: 13px;
+}
+
+/* Make code blocks (SQL) more readable */
+.message-content pre {
+    font-size: 12px;
+    max-width: 100%;
+    overflow-x: auto;
+}
+
+/* Adjust overall chat container width */
+#app-container {
+    max-width: 1600px !important;
+}
+
+/* Make input area wider */
+.chat-input {
+    max-width: 1400px !important;
+}

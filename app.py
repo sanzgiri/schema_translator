@@ -44,18 +44,40 @@ def format_result_table(result) -> str:
     first_row = result.results[0]
     columns = list(first_row.data.keys())
     
-    # Build markdown table
+    # Build markdown table with better formatting
     lines = []
     
-    # Header
-    header = "| " + " | ".join(columns) + " |"
+    # Header with nicer column names
+    nice_names = {
+        'contract_identifier': 'ID',
+        'contract_name': 'Name',
+        'customer_name': 'Customer',
+        'contract_value': 'Value',
+        'contract_status': 'Status',
+        'contract_expiration': 'Expiration',
+        'contract_start': 'Start Date',
+        'industry_sector': 'Industry'
+    }
+    display_cols = [nice_names.get(col, col) for col in columns]
+    header = "| " + " | ".join(display_cols) + " |"
     separator = "|" + "|".join(["---" for _ in columns]) + "|"
     lines.append(header)
     lines.append(separator)
     
     # Rows (limit to first 50 to avoid huge messages)
     for row in result.results[:50]:
-        values = [str(row.data.get(col, "")) for col in columns]
+        values = []
+        for col in columns:
+            val = row.data.get(col, "")
+            # Format values for better display
+            if val is None or val == "None":
+                val = "—"
+            elif isinstance(val, (int, float)) and col == 'contract_value':
+                # Format currency values
+                val = f"${val:,.0f}"
+            else:
+                val = str(val)
+            values.append(val)
         line = "| " + " | ".join(values) + " |"
         lines.append(line)
     
@@ -228,6 +250,22 @@ async def main(message: cl.Message):
             
             # Build response message
             content_parts = []
+            
+            # Show available fields
+            if result.results:
+                fields = list(result.results[0].data.keys())
+                field_names = {
+                    'contract_identifier': 'Contract ID',
+                    'contract_name': 'Contract Name',
+                    'customer_name': 'Customer',
+                    'contract_value': 'Value',
+                    'contract_status': 'Status',
+                    'contract_expiration': 'Expiration Date',
+                    'contract_start': 'Start Date',
+                    'industry_sector': 'Industry'
+                }
+                field_list = ', '.join([f"`{field_names.get(f, f)}`" for f in fields])
+                content_parts.append(f"**Showing {len(fields)} fields:** {field_list}\n")
             
             # Results table
             content_parts.append("### ✅ Query Results")

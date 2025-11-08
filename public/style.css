@@ -1,17 +1,35 @@
 /* Custom styles for Schema Translator Chainlit UI */
 
-/* Increase max width of chat messages to show more table columns */
-.step {
-    max-width: 1400px !important;
+/* Target the main content wrapper - this is key! */
+.MuiContainer-root {
+    max-width: 98vw !important;
+    width: 98vw !important;
+    padding-left: 8px !important;
+    padding-right: 8px !important;
 }
 
-/* Make table scrollable horizontally if needed */
+/* Maximize width for best table visibility */
+.step {
+    max-width: 98vw !important;
+    width: 98vw !important;
+}
+
+/* Target message content containers more broadly */
+.message-content,
+.step-content {
+    max-width: 100% !important;
+    width: 100% !important;
+}
+
+/* Make table take full width and scrollable horizontally if needed */
 .message-content table {
     display: block;
     overflow-x: auto;
     white-space: nowrap;
     font-size: 13px;
+    width: 100%;
     max-width: 100%;
+    margin: 0 auto
 }
 
 /* Adjust table cell padding for more compact display */
@@ -28,12 +46,32 @@
     overflow-x: auto;
 }
 
-/* Adjust overall chat container width */
-#app-container {
-    max-width: 1600px !important;
+/* Target the actual chat messages wrapper */
+[class*="MuiBox-root"] > div {
+    max-width: 98vw !important;
 }
 
 /* Make input area wider */
-.chat-input {
-    max-width: 1400px !important;
+.chat-input,
+[class*="inputContainer"] {
+    max-width: 98vw !important;
+}
+
+/* Ensure messages container uses full width */
+.messages-container,
+[class*="messagesContainer"] {
+    max-width: 98vw !important;
+}
+
+/* Additional targeting for the main layout */
+main {
+    max-width: 98vw !important;
+    width: 98vw !important;
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+}
+
+/* For any flex containers that might be constraining width */
+[class*="MuiStack-root"] {
+    max-width: 100% !important;
 }

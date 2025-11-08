@@ -25,11 +25,12 @@ logger = logging.getLogger(__name__)
 orchestrator: Optional[ChatOrchestrator] = None
 
 
-def format_result_table(result) -> str:
+def format_result_table(result, limit: int = 10) -> str:
     """Format harmonized result as a markdown table.
     
     Args:
         result: HarmonizedResult object
+        limit: Maximum number of rows to display (default 10)
         
     Returns:
         Markdown formatted table
@@ -42,30 +43,54 @@ def format_result_table(result) -> str:
         return "*No data*"
     
     first_row = result.results[0]
-    columns = list(first_row.data.keys())
+    all_columns = list(first_row.data.keys())
     
-    # Build markdown table with better formatting
-    lines = []
+    # Define preferred field order and nice names
+    field_order = [
+        'contract_identifier',
+        'customer_name', 
+        'contract_name',
+        'industry_sector',
+        'contract_value',
+        'contract_status',
+        'contract_expiration'
+    ]
     
-    # Header with nicer column names
     nice_names = {
-        'contract_identifier': 'ID',
-        'contract_name': 'Name',
-        'customer_name': 'Customer',
+        'contract_identifier': 'Contract ID',
+        'contract_name': 'Contract Name',
+        'customer_name': 'Company',  # Changed from Customer to Company
         'contract_value': 'Value',
         'contract_status': 'Status',
         'contract_expiration': 'Expiration',
         'contract_start': 'Start Date',
         'industry_sector': 'Industry'
     }
+    
+    # Order columns: preferred order first, then any remaining
+    columns = []
+    for field in field_order:
+        if field in all_columns:
+            columns.append(field)
+    
+    # Add any remaining columns not in preferred order
+    for col in all_columns:
+        if col not in columns:
+            columns.append(col)
+    
+    # Build markdown table with better formatting
+    lines = []
+    
+    # Header with nicer column names
     display_cols = [nice_names.get(col, col) for col in columns]
     header = "| " + " | ".join(display_cols) + " |"
     separator = "|" + "|".join(["---" for _ in columns]) + "|"
     lines.append(header)
     lines.append(separator)
     
-    # Rows (limit to first 50 to avoid huge messages)
-    for row in result.results[:50]:
+    # Rows (limit to specified number or total results, whichever is smaller)
+    max_rows = min(limit, len(result.results))
+    for row in result.results[:max_rows]:
         values = []
         for col in columns:
             val = row.data.get(col, "")
@@ -81,8 +106,8 @@ def format_result_table(result) -> str:
         line = "| " + " | ".join(values) + " |"
         lines.append(line)
     
-    if len(result.results) > 50:
-        lines.append(f"\n*... and {len(result.results) - 50} more rows*")
+    if len(result.results) > max_rows:
+        lines.append(f"\n*Showing {max_rows} of {len(result.results)} rows. Use `/limit <number>` to adjust.*")
     
     return "\n".join(lines)
 
@@ -169,6 +194,7 @@ async def start():
         cl.user_session.set("orchestrator", orchestrator)
         cl.user_session.set("debug_mode", False)
         cl.user_session.set("selected_customers", [])  # Empty = all customers
+        cl.user_session.set("result_limit", 10)  # Default rows to display
         
         mode = "LLM mode" if orchestrator.use_llm else "Mock mode"
         
@@ -185,6 +211,7 @@ I can help you query customer databases using natural language. Just ask me ques
 
 ### Available Commands:
 - `/customers` - List available customers
+- `/limit <number>` - Set max rows to display (default: 10)
 - `/debug on/off` - Toggle debug mode
 - `/stats` - Show query statistics
 - `/help` - Show this help message
@@ -213,6 +240,7 @@ async def main(message: cl.Message):
     orchestrator = cl.user_session.get("orchestrator")
     debug_mode = cl.user_session.get("debug_mode", False)
     selected_customers = cl.user_session.get("selected_customers", [])
+    result_limit = cl.user_session.get("result_limit", 10)
     
     if not orchestrator:
         await cl.Message(content="❌ Orchestrator not initialized. Please refresh.").send()
@@ -257,7 +285,7 @@ async def main(message: cl.Message):
                 field_names = {
                     'contract_identifier': 'Contract ID',
                     'contract_name': 'Contract Name',
-                    'customer_name': 'Customer',
+                    'customer_name': 'Company',  # Changed from Customer to Company
                     'contract_value': 'Value',
                     'contract_status': 'Status',
                     'contract_expiration': 'Expiration Date',
@@ -269,7 +297,7 @@ async def main(message: cl.Message):
             
             # Results table
             content_parts.append("### ✅ Query Results")
-            content_parts.append(format_result_table(result))
+            content_parts.append(format_result_table(result, limit=result_limit))
             
             # Statistics
             stats = {
@@ -388,6 +416,7 @@ async def handle_command(command: str, orchestrator: ChatOrchestrator, debug_mod
 - `/customers` - List available customers
 - `/select <customer_id>` - Query specific customer(s)
 - `/select all` - Query all customers (default)
+- `/limit <number>` - Set max rows to display (default: 10)
 - `/debug on/off` - Toggle debug mode
 - `/stats` - Show query statistics
 - `/explain <query>` - Explain how a query will be processed
@@ -503,6 +532,23 @@ async def handle_command(command: str, orchestrator: ChatOrchestrator, debug_mod
                 await cl.Message(content=f"Currently querying: **{', '.join(selected)}**").send()
             else:
                 await cl.Message(content="Currently querying: **all customers**").send()
+    
+    elif cmd == "/limit":
+        if len(parts) > 1:
+            try:
+                limit = int(parts[1])
+                if limit < 1:
+                    await cl.Message(content="⚠️ Limit must be at least 1.").send()
+                elif limit > 1000:
+                    await cl.Message(content="⚠️ Limit cannot exceed 1000 rows.").send()
+                else:
+                    cl.user_session.set("result_limit", limit)
+                    await cl.Message(content=f"✅ Result limit set to **{limit} rows**.").send()
+            except ValueError:
+                await cl.Message(content="⚠️ Invalid number. Use `/limit <number>`").send()
+        else:
+            current_limit = cl.user_session.get("result_limit", 10)
+            await cl.Message(content=f"Current result limit: **{current_limit} rows**").send()
     
     else:
         await cl.Message(content=f"❓ Unknown command: `{cmd}`. Type `/help` for available commands.").send()

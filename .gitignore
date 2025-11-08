@@ -59,6 +59,7 @@ dmypy.json
 
 # Project Specific
 databases/*.db
+data/feedback.jsonl
 knowledge_graph.json
 query_history.json
 *.log

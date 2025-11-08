@@ -1,6 +1,6 @@
 """Data models for Schema Translator using Pydantic."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
@@ -238,7 +238,7 @@ class QueryFeedback(BaseModel):
     feedback_type: str = Field(..., description="Type of feedback (incorrect, missing, good)")
     feedback_text: Optional[str] = Field(None, description="User's feedback comment")
     correct_result: Optional[Any] = Field(None, description="What the correct result should be")
-    timestamp: datetime = Field(default_factory=datetime.utcnow, description="When feedback was given")
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), description="When feedback was given")
 
 
 class SchemaChange(BaseModel):
@@ -249,5 +249,5 @@ class SchemaChange(BaseModel):
     column_name: Optional[str] = Field(None, description="Affected column")
     old_value: Optional[Any] = Field(None, description="Previous value")
     new_value: Optional[Any] = Field(None, description="New value")
-    detected_at: datetime = Field(default_factory=datetime.utcnow, description="When change was detected")
+    detected_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), description="When change was detected")
     requires_remapping: bool = Field(default=False, description="Whether concept mappings need update")

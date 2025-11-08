@@ -6,7 +6,7 @@ Tests for FeedbackLoop and SchemaDriftDetector components.
 
 import pytest
 from pathlib import Path
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from unittest.mock import Mock, patch
 
 from schema_translator.feedback_loop import FeedbackLoop
@@ -178,7 +178,7 @@ class TestFeedbackLoop:
         loop.submit_feedback("query1", plan, "good")
         
         # Manually set old timestamp
-        loop.feedback_cache[0].timestamp = datetime.utcnow() - timedelta(days=100)
+        loop.feedback_cache[0].timestamp = datetime.now(timezone.utc) - timedelta(days=100)
         
         removed = loop.clear_old_feedback(days=90)
         
@@ -193,7 +193,7 @@ class TestSchemaSnapshot:
         """Test creating a schema snapshot."""
         snapshot = SchemaSnapshot(
             customer_id="test_customer",
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(timezone.utc),
             tables={"contracts": ["id", "value", "status"]},
             row_counts={"contracts": 10}
         )
@@ -206,7 +206,7 @@ class TestSchemaSnapshot:
         """Test snapshot to/from dict."""
         snapshot1 = SchemaSnapshot(
             customer_id="test",
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(timezone.utc),
             tables={"t1": ["c1", "c2"]},
             row_counts={"t1": 5}
         )
@@ -264,7 +264,7 @@ class TestSchemaDriftDetector:
         # Create old snapshot
         old_snapshot = SchemaSnapshot(
             customer_id="test",
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(timezone.utc),
             tables={"table1": ["col1"]},
             row_counts={"table1": 10}
         )
@@ -272,7 +272,7 @@ class TestSchemaDriftDetector:
         # Create new snapshot with added table
         new_snapshot = SchemaSnapshot(
             customer_id="test",
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(timezone.utc),
             tables={
                 "table1": ["col1"],
                 "table2": ["col2", "col3"]
@@ -290,14 +290,14 @@ class TestSchemaDriftDetector:
         """Test detecting removed table."""
         old_snapshot = SchemaSnapshot(
             customer_id="test",
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(timezone.utc),
             tables={"table1": ["col1"], "table2": ["col2"]},
             row_counts={"table1": 10, "table2": 5}
         )
         
         new_snapshot = SchemaSnapshot(
             customer_id="test",
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(timezone.utc),
             tables={"table1": ["col1"]},
             row_counts={"table1": 10}
         )
@@ -312,14 +312,14 @@ class TestSchemaDriftDetector:
         """Test detecting added columns."""
         old_snapshot = SchemaSnapshot(
             customer_id="test",
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(timezone.utc),
             tables={"table1": ["col1"]},
             row_counts={"table1": 10}
         )
         
         new_snapshot = SchemaSnapshot(
             customer_id="test",
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(timezone.utc),
             tables={"table1": ["col1", "col2", "col3"]},
             row_counts={"table1": 10}
         )
@@ -334,14 +334,14 @@ class TestSchemaDriftDetector:
         """Test detecting removed columns."""
         old_snapshot = SchemaSnapshot(
             customer_id="test",
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(timezone.utc),
             tables={"table1": ["col1", "col2", "col3"]},
             row_counts={"table1": 10}
         )
         
         new_snapshot = SchemaSnapshot(
             customer_id="test",
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(timezone.utc),
             tables={"table1": ["col1"]},
             row_counts={"table1": 10}
         )
@@ -356,14 +356,14 @@ class TestSchemaDriftDetector:
         """Test detecting significant row count changes."""
         old_snapshot = SchemaSnapshot(
             customer_id="test",
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(timezone.utc),
             tables={"table1": ["col1"]},
             row_counts={"table1": 100}
         )
         
         new_snapshot = SchemaSnapshot(
             customer_id="test",
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(timezone.utc),
             tables={"table1": ["col1"]},
             row_counts={"table1": 10}  # 90% decrease
         )
@@ -378,7 +378,7 @@ class TestSchemaDriftDetector:
         """Test when no drift exists."""
         snapshot = SchemaSnapshot(
             customer_id="test",
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(timezone.utc),
             tables={"table1": ["col1"]},
             row_counts={"table1": 10}
         )
@@ -391,7 +391,7 @@ class TestSchemaDriftDetector:
         """Test snapshot persistence."""
         snapshot = SchemaSnapshot(
             customer_id="test",
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(timezone.utc),
             tables={"table1": ["col1"]},
             row_counts={"table1": 10}
         )

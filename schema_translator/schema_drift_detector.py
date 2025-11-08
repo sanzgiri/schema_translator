@@ -6,7 +6,7 @@ affect query execution and mappings.
 """
 
 from typing import List, Dict, Any, Optional, Set, Tuple
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 import sqlite3
 import json
@@ -87,7 +87,7 @@ class SchemaDrift:
         self.severity = severity
         self.description = description
         self.details = details
-        self.detected_at = datetime.utcnow()
+        self.detected_at = datetime.now(timezone.utc)
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary."""
@@ -171,7 +171,7 @@ class SchemaDriftDetector:
             
             snapshot = SchemaSnapshot(
                 customer_id=customer_id,
-                timestamp=datetime.utcnow(),
+                timestamp=datetime.now(timezone.utc),
                 tables=tables,
                 row_counts=row_counts
             )

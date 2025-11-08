@@ -6,7 +6,7 @@ and schema mapping over time.
 """
 
 from typing import List, Dict, Any, Optional, Tuple
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from collections import defaultdict, Counter
 import json
 import logging
@@ -99,7 +99,7 @@ class FeedbackLoop:
         Returns:
             Summary statistics
         """
-        cutoff_date = datetime.utcnow() - timedelta(days=days)
+        cutoff_date = datetime.now(timezone.utc) - timedelta(days=days)
         recent_feedback = [
             f for f in self.feedback_cache
             if f.timestamp >= cutoff_date
@@ -352,7 +352,7 @@ class FeedbackLoop:
         feedback_to_export = self.feedback_cache
         
         if days:
-            cutoff_date = datetime.utcnow() - timedelta(days=days)
+            cutoff_date = datetime.now(timezone.utc) - timedelta(days=days)
             feedback_to_export = [
                 f for f in feedback_to_export
                 if f.timestamp >= cutoff_date
@@ -377,7 +377,7 @@ class FeedbackLoop:
         Returns:
             Number of entries removed
         """
-        cutoff_date = datetime.utcnow() - timedelta(days=days)
+        cutoff_date = datetime.now(timezone.utc) - timedelta(days=days)
         
         old_count = len(self.feedback_cache)
         self.feedback_cache = [
@@ -423,7 +423,7 @@ class FeedbackLoop:
         
         type_counts = Counter(f.feedback_type for f in self.feedback_cache)
         
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         ages = [(now - f.timestamp).days for f in self.feedback_cache]
         
         return {

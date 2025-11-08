@@ -2,7 +2,7 @@
 
 import logging
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, List, Optional, Any
 
 from schema_translator.agents import QueryUnderstandingAgent, SchemaAnalyzerAgent
@@ -52,7 +52,7 @@ class QueryHistory:
             error: Error message if query failed
         """
         self.queries.append({
-            "timestamp": datetime.utcnow(),
+            "timestamp": datetime.now(timezone.utc),
             "query_text": query_text,
             "semantic_plan": semantic_plan,
             "result": result,
@@ -601,5 +601,5 @@ class ChatOrchestrator:
             "query_statistics": query_stats,
             "feedback_insights": feedback_insights,
             "drift_summary": drift_summary,
-            "timestamp": datetime.utcnow().isoformat()
+            "timestamp": datetime.now(timezone.utc).isoformat()
         }

@@ -43,20 +43,23 @@ class QueryCompiler:
         # Collect all tables needed for this query
         tables_needed = self._get_required_tables(query_plan, customer_id)
         
+        # Determine primary table
+        primary_table = self._determine_primary_table(query_plan, customer_id, tables_needed)
+        
         # Generate SELECT clause
-        select_clause = self._generate_select(query_plan, customer_id)
+        select_clause = self._generate_select(query_plan, customer_id, tables_needed, primary_table)
         
         # Generate FROM clause with JOINs if needed
         from_clause = self._generate_from(query_plan, customer_id, tables_needed)
         
         # Generate WHERE clause
-        where_clause = self._generate_where(query_plan, customer_id)
+        where_clause = self._generate_where(query_plan, customer_id, primary_table)
         
         # Generate GROUP BY clause
-        group_by_clause = self._generate_group_by(query_plan, customer_id)
+        group_by_clause = self._generate_group_by(query_plan, customer_id, primary_table)
         
         # Generate ORDER BY clause
-        order_by_clause = self._generate_order_by(query_plan, customer_id)
+        order_by_clause = self._generate_order_by(query_plan, customer_id, primary_table)
         
         # Generate LIMIT clause
         limit_clause = self._generate_limit(query_plan)
@@ -99,7 +102,9 @@ class QueryCompiler:
             for concept_id in query_plan.projections:
                 mapping = self.kg.get_mapping(concept_id, customer_id)
                 if mapping:
-                    tables.add(mapping.table_name)
+                    # Skip tables with transformations (they use subqueries, not JOINs)
+                    if not mapping.transformation:
+                        tables.add(mapping.table_name)
                     tables.update(mapping.join_requirements)
         else:
             # If no projections specified (select all), get tables from all concepts
@@ -107,15 +112,23 @@ class QueryCompiler:
             for concept in all_concepts:
                 mapping = self.kg.get_mapping(concept.concept_id, customer_id)
                 if mapping:
-                    tables.add(mapping.table_name)
+                    # Skip tables with transformations (they use subqueries, not JOINs)
+                    if not mapping.transformation:
+                        tables.add(mapping.table_name)
                     tables.update(mapping.join_requirements)
         
         # Get tables from filters
         for filter in query_plan.filters:
             mapping = self.kg.get_mapping(filter.concept, customer_id)
             if mapping:
-                tables.add(mapping.table_name)
-                tables.update(mapping.join_requirements)
+                # If mapping has a transformation (subquery), don't add its table to joins
+                # The transformation will be used directly in WHERE clause
+                if not mapping.transformation:
+                    tables.add(mapping.table_name)
+                    tables.update(mapping.join_requirements)
+                else:
+                    # For transformations, only add join_requirements (not the transformed table itself)
+                    tables.update(mapping.join_requirements)
         
         # Get tables from aggregations
         if query_plan.aggregations:
@@ -138,13 +151,17 @@ class QueryCompiler:
     def _generate_select(
         self,
         query_plan: SemanticQueryPlan,
-        customer_id: str
+        customer_id: str,
+        tables_needed: Optional[Set[str]] = None,
+        primary_table: Optional[str] = None
     ) -> str:
         """Generate SELECT clause.
         
         Args:
             query_plan: Semantic query plan
             customer_id: Customer identifier
+            tables_needed: Set of tables required (for DISTINCT determination)
+            primary_table: Primary table name for the query
             
         Returns:
             SELECT clause
@@ -158,7 +175,7 @@ class QueryCompiler:
                 if not mapping:
                     raise ValueError(f"No mapping for concept '{agg.concept}' in {customer_id}")
                 
-                column_expr = self._get_column_expression(mapping, customer_id)
+                column_expr = self._get_column_expression(mapping, customer_id, primary_table)
                 alias = agg.alias or f"{agg.function.lower()}_{agg.concept}"
                 select_items.append(f"{agg.function}({column_expr}) AS {alias}")
             
@@ -167,7 +184,7 @@ class QueryCompiler:
                 for concept_id in query_plan.group_by:
                     mapping = self.kg.get_mapping(concept_id, customer_id)
                     if mapping:
-                        column_expr = self._get_column_expression(mapping, customer_id)
+                        column_expr = self._get_column_expression(mapping, customer_id, primary_table)
                         select_items.append(f"{column_expr} AS {concept_id}")
         
         # Handle regular projections
@@ -177,25 +194,50 @@ class QueryCompiler:
                 if not mapping:
                     raise ValueError(f"No mapping for concept '{concept_id}' in {customer_id}")
                 
-                column_expr = self._get_column_expression(mapping, customer_id)
+                column_expr = self._get_column_expression(mapping, customer_id, primary_table)
                 select_items.append(f"{column_expr} AS {concept_id}")
         
         else:
-            # Select all if no projections specified
-            select_items.append("*")
+            # Select all conceptual fields if no projections specified
+            # For multi-table queries, explicitly select columns to avoid foreign key columns
+            if tables_needed and len(tables_needed) > 1:
+                # Get all concepts that map to this customer
+                all_concepts = self.kg.get_all_concepts()
+                for concept in all_concepts:
+                    mapping = self.kg.get_mapping(concept.concept_id, customer_id)
+                    if mapping and mapping.table_name in tables_needed:
+                        # Skip if transformation - those are handled via subqueries
+                        if not mapping.transformation:
+                            column_expr = self._get_column_expression(mapping, customer_id, primary_table)
+                            select_items.append(f"{column_expr} AS {concept.concept_id}")
+                        else:
+                            # Include transformed fields too
+                            column_expr = self._get_column_expression(mapping, customer_id, primary_table)
+                            select_items.append(f"{column_expr} AS {concept.concept_id}")
+            else:
+                # Single table query - safe to use SELECT *
+                select_items.append("*")
         
-        return "SELECT " + ", ".join(select_items)
+        # Add DISTINCT for multi-table queries to avoid duplicates from JOINs
+        # Especially important for customer_b with 1-to-many relationships
+        distinct = ""
+        if tables_needed and len(tables_needed) > 1 and not query_plan.aggregations:
+            distinct = "DISTINCT "
+        
+        return f"SELECT {distinct}" + ", ".join(select_items)
     
     def _get_column_expression(
         self,
         mapping,
-        customer_id: str
+        customer_id: str,
+        primary_table: Optional[str] = None
     ) -> str:
         """Get the column expression with transformations if needed.
         
         Args:
             mapping: ConceptMapping object
             customer_id: Customer identifier
+            primary_table: Primary table name for the query (used in transformation references)
             
         Returns:
             Column expression (possibly with transformation)
@@ -205,8 +247,15 @@ class QueryCompiler:
         
         # Apply transformation if specified
         if mapping.transformation:
-            # Replace column placeholder with actual column reference
-            return mapping.transformation.replace("{column}", column_ref)
+            # Replace placeholders in transformation
+            result = mapping.transformation.replace("{column}", column_ref)
+            
+            # For customer_b contract_status, replace 'id' with primary table reference
+            if primary_table and "contract_id = id" in result:
+                primary_alias = self._get_table_alias(primary_table)
+                result = result.replace("contract_id = id", f"contract_id = {primary_alias}.id")
+            
+            return result
         
         return column_ref
     
@@ -333,13 +382,15 @@ class QueryCompiler:
     def _generate_where(
         self,
         query_plan: SemanticQueryPlan,
-        customer_id: str
+        customer_id: str,
+        primary_table: Optional[str] = None
     ) -> Optional[str]:
         """Generate WHERE clause from filters.
         
         Args:
             query_plan: Semantic query plan
             customer_id: Customer identifier
+            primary_table: Primary table name for the query
             
         Returns:
             WHERE clause or None if no filters
@@ -350,7 +401,7 @@ class QueryCompiler:
         conditions = []
         
         for filter in query_plan.filters:
-            condition = self._compile_filter(filter, customer_id)
+            condition = self._compile_filter(filter, customer_id, primary_table)
             if condition:
                 conditions.append(condition)
         
@@ -362,13 +413,15 @@ class QueryCompiler:
     def _compile_filter(
         self,
         filter: QueryFilter,
-        customer_id: str
+        customer_id: str,
+        primary_table: Optional[str] = None
     ) -> str:
         """Compile a single filter to SQL condition.
         
         Args:
             filter: Query filter
             customer_id: Customer identifier
+            primary_table: Primary table name for the query
             
         Returns:
             SQL condition
@@ -377,7 +430,7 @@ class QueryCompiler:
         if not mapping:
             raise ValueError(f"No mapping for concept '{filter.concept}' in {customer_id}")
         
-        column_expr = self._get_column_expression(mapping, customer_id)
+        column_expr = self._get_column_expression(mapping, customer_id, primary_table)
         
         # Handle different operators
         if filter.operator == QueryOperator.EQUALS:
@@ -424,13 +477,15 @@ class QueryCompiler:
     def _generate_group_by(
         self,
         query_plan: SemanticQueryPlan,
-        customer_id: str
+        customer_id: str,
+        primary_table: Optional[str] = None
     ) -> Optional[str]:
         """Generate GROUP BY clause.
         
         Args:
             query_plan: Semantic query plan
             customer_id: Customer identifier
+            primary_table: Primary table name for the query
             
         Returns:
             GROUP BY clause or None
@@ -442,7 +497,7 @@ class QueryCompiler:
         for concept_id in query_plan.group_by:
             mapping = self.kg.get_mapping(concept_id, customer_id)
             if mapping:
-                column_expr = self._get_column_expression(mapping, customer_id)
+                column_expr = self._get_column_expression(mapping, customer_id, primary_table)
                 group_by_items.append(column_expr)
         
         if group_by_items:
@@ -453,13 +508,15 @@ class QueryCompiler:
     def _generate_order_by(
         self,
         query_plan: SemanticQueryPlan,
-        customer_id: str
+        customer_id: str,
+        primary_table: Optional[str] = None
     ) -> Optional[str]:
         """Generate ORDER BY clause.
         
         Args:
             query_plan: Semantic query plan
             customer_id: Customer identifier
+            primary_table: Primary table name for the query
             
         Returns:
             ORDER BY clause or None
@@ -471,7 +528,7 @@ class QueryCompiler:
         for concept_id, direction in query_plan.order_by:
             mapping = self.kg.get_mapping(concept_id, customer_id)
             if mapping:
-                column_expr = self._get_column_expression(mapping, customer_id)
+                column_expr = self._get_column_expression(mapping, customer_id, primary_table)
                 order_items.append(f"{column_expr} {direction.upper()}")
         
         if order_items:

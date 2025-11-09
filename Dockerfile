@@ -12,5 +12,9 @@ COPY . .
 # Expose Chainlit default port for HF Spaces
 EXPOSE 7860
 
+# Set environment variables for WebSocket support
+ENV CHAINLIT_HOST=0.0.0.0
+ENV CHAINLIT_PORT=7860
+
 # Run setup then start app (setup runs at runtime when secrets are available)
 CMD python setup_env.py && chainlit run app.py --host 0.0.0.0 --port 7860 --headless

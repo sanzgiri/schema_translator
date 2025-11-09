@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 config = Config()
 orchestrator = ChatOrchestrator(config, use_llm=True)
 
-def process_query(message: str, history: list) -> str:
+def process_query(message: str, history) -> str:
     """Process user query and return response."""
     try:
         logger.info(f"Processing query: {message}")

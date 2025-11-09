@@ -209,6 +209,35 @@ Result:
     "limit": 50
 }}
 
+Query: "Show me contracts from customer A" or "List customer_a contracts"
+Result:
+{{
+    "intent": "find_contracts",
+    "filters": [],
+    "projections": [],
+    "target_customers": ["customer_a"]
+}}
+
+Query: "Show active contracts for customer B and customer C"
+Result:
+{{
+    "intent": "find_contracts",
+    "filters": [
+        {{
+            "concept": "contract_status",
+            "operator": "equals",
+            "value": "active"
+        }}
+    ],
+    "projections": [],
+    "target_customers": ["customer_b", "customer_c"]
+}}
+
+CRITICAL: When user mentions specific customers (e.g., "customer A", "customer_a", "from customer B"):
+- Use "target_customers" field with list of customer IDs: ["customer_a", "customer_b", etc.]
+- Do NOT create a filter for customer names
+- Customer IDs should be lowercase: customer_a, customer_b, customer_c, customer_d, customer_e, customer_f
+
 Now parse the user's query and return ONLY the JSON object."""
 
     def understand_query(

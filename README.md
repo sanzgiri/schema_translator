@@ -1,3 +1,13 @@
+---
+title: Schema Translator
+emoji: 🔄
+colorFrom: blue
+colorTo: purple
+sdk: docker
+pinned: false
+license: mit
+---
+
 # Schema Translator
 
 An intelligent contract schema translation system that enables querying across multiple enterprise customers with heterogeneous database schemas using LLM-powered semantic understanding.

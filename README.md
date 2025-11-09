@@ -8,6 +8,12 @@ sdk_version: 4.44.1
 app_file: app_gradio.py
 pinned: false
 license: mit
+tags:
+  - llm
+  - database
+  - schema-translation
+  - natural-language-query
+python_version: "3.12"
 ---
 
 # Schema Translator

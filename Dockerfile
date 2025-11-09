@@ -13,4 +13,4 @@ COPY . .
 EXPOSE 7860
 
 # Run setup then start app (setup runs at runtime when secrets are available)
-CMD python setup_env.py && chainlit run app.py --host 0.0.0.0 --port 7860
+CMD python setup_env.py && chainlit run app.py --host 0.0.0.0 --port 7860 --headless

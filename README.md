@@ -1,29 +1,10 @@
----
-title: Schema Translator
-emoji: 🔄
-colorFrom: blue
-colorTo: purple
-sdk: gradio
-sdk_version: 5.0.0
-app_file: app_gradio.py
-pinned: false
-license: mit
-tags:
-  - llm
-  - database
-  - schema-translation
-  - natural-language-query
-python_version: "3.12"
----
-
 # Schema Translator
 
 An intelligent contract schema translation system that enables querying across multiple enterprise customers with heterogeneous database schemas using LLM-powered semantic understanding.
 
 ## Prerequisites
 
-- Python 3.10+
-- UV package manager
+- Python 3.12+
 - Anthropic API key
 
 ## Setup Instructions
@@ -31,21 +12,21 @@ An intelligent contract schema translation system that enables querying across m
 ### 1. Clone the Repository
 
 ```bash
-git clone <repo-url>
-cd schema_translator_v2
+git clone https://github.com/sanzgiri/schema_translator.git
+cd schema_translator
 ```
 
-### 2. Create Virtual Environment with UV
+### 2. Create Virtual Environment
 
 ```bash
-uv venv
+python3.12 -m venv .venv
 source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 ```
 
 ### 3. Install Dependencies
 
 ```bash
-uv pip install -r requirements.txt
+pip install -r requirements.txt
 ```
 
 ### 4. Configure Environment Variables
@@ -69,14 +50,18 @@ pytest tests/
 
 ### 7. Start the Application
 
+**Local Development:**
 ```bash
 chainlit run app.py
 ```
 
+**Railway Deployment:**
+The app is configured for Railway deployment with automatic database initialization. Push to the `main` branch to trigger deployment.
+
 ## Project Structure
 
 ```
-schema_translator_v2/
+schema_translator/
 ├── README.md
 ├── requirements.txt
 ├── .env.example
@@ -99,7 +84,7 @@ schema_translator_v2/
 
 ## Tech Stack
 
-- **Language:** Python 3.10+
+- **Language:** Python 3.12+
 - **LLM:** Anthropic Claude (claude-sonnet-4-20250514)
 - **Database:** SQLite
 - **UI Framework:** Chainlit
@@ -107,6 +92,7 @@ schema_translator_v2/
 - **Graph:** NetworkX
 - **Testing:** pytest
 - **Environment:** python-dotenv
+- **Deployment:** Railway
 
 ## Development
 

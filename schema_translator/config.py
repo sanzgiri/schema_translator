@@ -26,7 +26,7 @@ class Config(BaseSettings):
     
     # LLM Configuration
     model_name: str = Field(
-        default="claude-sonnet-4-20250514",
+        default="claude-sonnet-4-5-20250929",
         description="Claude model to use"
     )
     max_tokens: int = Field(

@@ -65,11 +65,13 @@ class ChatOrchestrator:
             logger.info("Initializing LLM agents...")
             self.query_agent = QueryUnderstandingAgent(
                 self.config.anthropic_api_key,
-                self.knowledge_graph
+                self.knowledge_graph,
+                self.config
             )
             self.schema_agent = SchemaAnalyzerAgent(
                 self.config.anthropic_api_key,
-                self.knowledge_graph
+                self.knowledge_graph,
+                self.config
             )
         else:
             logger.info("Running in mock mode (no LLM)")

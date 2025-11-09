@@ -3,7 +3,7 @@ Schema Analyzer Agent: Automatically analyze customer schemas and propose mappin
 """
 
 import json
-from typing import List, Dict, Any, Tuple
+from typing import List, Dict, Any, Tuple, Optional
 from anthropic import Anthropic
 from ..models import (
     CustomerSchema,
@@ -13,6 +13,7 @@ from ..models import (
     ConceptMapping,
 )
 from ..knowledge_graph import SchemaKnowledgeGraph
+from ..config import Config
 
 
 class SchemaAnalyzerAgent:
@@ -21,17 +22,26 @@ class SchemaAnalyzerAgent:
     semantic concept mappings using LLM-powered understanding.
     """
 
-    def __init__(self, anthropic_api_key: str, knowledge_graph: SchemaKnowledgeGraph):
+    def __init__(
+        self, 
+        anthropic_api_key: str, 
+        knowledge_graph: SchemaKnowledgeGraph,
+        config: Optional[Config] = None
+    ):
         """
         Initialize the schema analyzer agent.
 
         Args:
             anthropic_api_key: API key for Anthropic Claude
             knowledge_graph: Schema knowledge graph with semantic concepts
+            config: Configuration object (creates new if None)
         """
         self.client = Anthropic(api_key=anthropic_api_key)
         self.kg = knowledge_graph
-        self.model = "claude-sonnet-4-20250514"
+        self.config = config or Config()
+        self.model = self.config.model_name
+        self.max_tokens = self.config.max_tokens
+        self.temperature = self.config.temperature
 
     def _build_system_prompt(self) -> str:
         """Build the system prompt with available semantic concepts."""
@@ -144,10 +154,10 @@ Return ONLY the JSON object with mappings."""
                 # Call Claude API
                 message = self.client.messages.create(
                     model=self.model,
-                    max_tokens=4096,
+                    max_tokens=self.max_tokens,
                     system=system_prompt,
                     messages=[{"role": "user", "content": user_prompt}],
-                    temperature=0.0,  # Deterministic for structured output
+                    temperature=self.temperature,
                 )
 
                 # Extract JSON from response

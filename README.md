@@ -2,10 +2,11 @@
 
 An intelligent contract schema translation system that enables querying across multiple enterprise customers with heterogeneous database schemas using LLM-powered semantic understanding.
 
-## Prerequisites
+## Architecture
 
-- Python 3.12+
-- Anthropic API key
+![Schema Translator Architecture](schema_translator_architecture_graphviz.png)
+
+The system uses a semantic query understanding approach powered by Claude Sonnet 4.5, with a knowledge graph mapping business concepts to customer-specific schemas, enabling unified querying across heterogeneous databases.
 
 ## Setup Instructions
 
@@ -19,14 +20,14 @@ cd schema_translator
 ### 2. Create Virtual Environment
 
 ```bash
-python3.12 -m venv .venv
-source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+uv venv
+source .venv/bin/activate  
 ```
 
 ### 3. Install Dependencies
 
 ```bash
-pip install -r requirements.txt
+uv pip install -r requirements.txt
 ```
 
 ### 4. Configure Environment Variables
@@ -52,7 +53,7 @@ pytest tests/
 
 **Local Development:**
 ```bash
-chainlit run app.py
+chainlit run app.py --port 8000
 ```
 
 **Railway Deployment:**
@@ -85,41 +86,12 @@ schema_translator/
 ## Tech Stack
 
 - **Language:** Python 3.12+
-- **LLM:** Anthropic Claude (claude-sonnet-4-20250514)
+- **LLM:** Anthropic Claude 4.5
 - **Database:** SQLite
 - **UI Framework:** Chainlit
 - **Data Validation:** Pydantic
 - **Graph:** NetworkX
 - **Testing:** pytest
-- **Environment:** python-dotenv
 - **Deployment:** Railway
 
-## Development
 
-### Running Tests
-
-```bash
-pytest tests/ -v
-```
-
-### Code Formatting
-
-```bash
-black schema_translator/ tests/
-```
-
-### Linting
-
-```bash
-ruff check schema_translator/ tests/
-```
-
-### Type Checking
-
-```bash
-mypy schema_translator/
-```
-
-## License
-
-See LICENSE file for details.

@@ -264,28 +264,18 @@ async def start():
         mode = "LLM mode" if orchestrator.use_llm else "Mock mode"
         
         # Send welcome message
-        welcome_msg = f"""# 🎯 Schema Translator Chat
+        welcome_msg = f"""# 🎯 Schema Translator
 
-Welcome! I'm running in **{mode}**.
+Query customer databases using natural language. Running in **{mode}**.
 
-I can help you query customer databases using natural language. Just ask me questions like:
-- "Show me all contracts"
-- "Find active contracts with value over 10000"
-- "Show contracts from customer A" or "from customer_a"
-- "List contracts in customer B and C"
-- "Count contracts by status"
+**Examples:**
+- "Show me all contracts from customer A"
+- "Find active contracts with value over $3M"
+- "Show contracts from customer expiring by end "
 
-**Note:** Results show Customer column (A, B, C, etc.) indicating which database each contract is from.
+**Commands:** `/customers` • `/select <id>` • `/limit <n>` • `/debug on/off` • `/stats` • `/help`
 
-### Available Commands:
-- `/customers` - List available databases (customer_a through customer_f)
-- `/select <customer_id>` - Query specific database (e.g., `/select customer_a`)
-- `/limit <number>` - Set max rows to display (default: 10)
-- `/debug on/off` - Toggle debug mode
-- `/stats` - Show query statistics
-- `/help` - Show this help message
-
-Try asking me a question!
+Ask me anything!
 """
         
         await cl.Message(content=welcome_msg).send()

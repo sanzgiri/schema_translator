@@ -70,3 +70,6 @@ query_history.json
 
 # Ruff
 .ruff_cache/
+
+tmp/
+*.dot

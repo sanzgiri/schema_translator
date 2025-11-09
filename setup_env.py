@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Setup environment for Hugging Face Spaces deployment."""
+"""Setup environment for deployment."""
 
 from pathlib import Path
 import sys

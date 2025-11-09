@@ -3,8 +3,9 @@ title: Schema Translator
 emoji: 🔄
 colorFrom: blue
 colorTo: purple
-sdk: docker
-app_port: 7860
+sdk: gradio
+sdk_version: 4.0.0
+app_file: app_gradio.py
 pinned: false
 license: mit
 ---

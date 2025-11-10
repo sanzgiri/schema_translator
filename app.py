@@ -188,10 +188,8 @@ def format_statistics(stats: Dict[str, Any]) -> str:
     """
     lines = [
         "### 📊 Execution Statistics",
-        f"- **Success Rate:** {stats['success_rate']:.1f}%",
         f"- **Total Rows:** {stats['total_rows']}",
         f"- **Customers Queried:** {len(stats['customers_queried'])}",
-        f"- **Customers Succeeded:** {len(stats['customers_succeeded'])}",
         f"- **Execution Time:** {stats['execution_time_ms']:.2f}ms"
     ]
     
@@ -227,7 +225,13 @@ def format_debug_info(debug: Dict[str, Any]) -> str:
             lines.append(f"  - `{f['concept']}` {f['operator']} `{f['value']}`")
     
     if debug['semantic_plan']['aggregations']:
-        lines.append(f"- Aggregations: {', '.join(debug['semantic_plan']['aggregations'])}")
+        agg_strs = []
+        for agg in debug['semantic_plan']['aggregations']:
+            if agg.get('alias'):
+                agg_strs.append(f"{agg['function']}({agg['concept']}) as {agg['alias']}")
+            else:
+                agg_strs.append(f"{agg['function']}({agg['concept']})")
+        lines.append(f"- Aggregations: {', '.join(agg_strs)}")
     
     # Show actual columns returned
     if 'actual_columns' in debug:
@@ -432,10 +436,8 @@ async def main(message: cl.Message):
             
             # Statistics
             stats = {
-                'success_rate': result.success_rate,
                 'total_rows': result.total_count,
                 'customers_queried': result.customers_queried,
-                'customers_succeeded': result.customers_succeeded,
                 'customers_failed': result.customers_failed,
                 'execution_time_ms': response['execution_time_ms']
             }
@@ -608,7 +610,6 @@ async def handle_command(command: str, orchestrator: ChatOrchestrator, debug_mod
 
 **Query History:**
 - Total Queries: {stats['total_queries']}
-- Successful: {stats['successful_queries']} ({stats['success_rate']:.1f}%)
 - Failed: {stats['failed_queries']}
 - Average Execution Time: {stats['average_execution_time_ms']:.2f}ms
 

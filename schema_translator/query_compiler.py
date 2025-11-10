@@ -107,15 +107,30 @@ class QueryCompiler:
                         tables.add(mapping.table_name)
                     tables.update(mapping.join_requirements)
         else:
-            # If no projections specified (select all), get tables from all concepts
+            # If no projections specified (select all), get primary table only
+            # For customer_b, this means contract_headers (not renewal_schedule)
+            # We'll include transformations like status in SELECT, but not JOIN unnecessary tables
             all_concepts = self.kg.get_all_concepts()
+            primary_tables = set()
             for concept in all_concepts:
                 mapping = self.kg.get_mapping(concept.concept_id, customer_id)
                 if mapping:
-                    # Skip tables with transformations (they use subqueries, not JOINs)
-                    if not mapping.transformation:
-                        tables.add(mapping.table_name)
-                    tables.update(mapping.join_requirements)
+                    # Only add tables that don't have join requirements
+                    # (i.e., the "primary" tables, not the auxiliary ones)
+                    if not mapping.transformation and not mapping.join_requirements:
+                        primary_tables.add(mapping.table_name)
+            
+            # If we found primary tables, use only those
+            if primary_tables:
+                tables.update(primary_tables)
+            else:
+                # Fallback: use all tables (shouldn't happen with proper schema)
+                for concept in all_concepts:
+                    mapping = self.kg.get_mapping(concept.concept_id, customer_id)
+                    if mapping:
+                        if not mapping.transformation:
+                            tables.add(mapping.table_name)
+                        tables.update(mapping.join_requirements)
         
         # Get tables from filters
         for filter in query_plan.filters:
@@ -199,23 +214,36 @@ class QueryCompiler:
         
         else:
             # Select all conceptual fields if no projections specified
-            # For multi-table queries, explicitly select columns to avoid foreign key columns
-            if tables_needed and len(tables_needed) > 1:
+            # Check if we need to include transformed fields (like customer_b status)
+            all_concepts = self.kg.get_all_concepts()
+            has_transformations_to_include = False
+            
+            for concept in all_concepts:
+                mapping = self.kg.get_mapping(concept.concept_id, customer_id)
+                if mapping and mapping.transformation:
+                    # Check if this transformation's requirements are met by available tables
+                    if not mapping.join_requirements or all(t in tables_needed for t in mapping.join_requirements):
+                        has_transformations_to_include = True
+                        break
+            
+            # If we have transformations to include, explicitly list all columns
+            if has_transformations_to_include or (tables_needed and len(tables_needed) > 1):
                 # Get all concepts that map to this customer
-                all_concepts = self.kg.get_all_concepts()
                 for concept in all_concepts:
                     mapping = self.kg.get_mapping(concept.concept_id, customer_id)
-                    if mapping and mapping.table_name in tables_needed:
-                        # Skip if transformation - those are handled via subqueries
-                        if not mapping.transformation:
-                            column_expr = self._get_column_expression(mapping, customer_id, primary_table)
-                            select_items.append(f"{column_expr} AS {concept.concept_id}")
-                        else:
-                            # Include transformed fields too
+                    if mapping:
+                        # Include if: table is in query OR has transformation that can use available tables
+                        if mapping.transformation:
+                            # Include transformed fields if their join requirements are met
+                            if not mapping.join_requirements or all(t in tables_needed for t in mapping.join_requirements):
+                                column_expr = self._get_column_expression(mapping, customer_id, primary_table)
+                                select_items.append(f"{column_expr} AS {concept.concept_id}")
+                        elif mapping.table_name in tables_needed:
+                            # Regular column - include if its table is in the query
                             column_expr = self._get_column_expression(mapping, customer_id, primary_table)
                             select_items.append(f"{column_expr} AS {concept.concept_id}")
             else:
-                # Single table query - safe to use SELECT *
+                # Simple single table query with no transformations - use SELECT *
                 select_items.append("*")
         
         # Add DISTINCT for multi-table queries to avoid duplicates from JOINs
@@ -250,10 +278,11 @@ class QueryCompiler:
             # Replace placeholders in transformation
             result = mapping.transformation.replace("{column}", column_ref)
             
-            # For customer_b contract_status, replace 'id' with primary table reference
-            if primary_table and "contract_id = id" in result:
-                primary_alias = self._get_table_alias(primary_table)
-                result = result.replace("contract_id = id", f"contract_id = {primary_alias}.id")
+            # For customer_b contract_status, always reference contract_headers.id
+            # (not the primary table, which might be renewal_schedule or contract_status_history)
+            if "contract_id = id" in result and customer_id == "customer_b":
+                headers_alias = self._get_table_alias("contract_headers")
+                result = result.replace("contract_id = id", f"contract_id = {headers_alias}.id")
             
             return result
         

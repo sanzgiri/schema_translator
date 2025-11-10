@@ -466,6 +466,41 @@ class QueryCompiler:
                 # Date comparison
                 return f"{column_expr} BETWEEN CURRENT_DATE AND DATE(CURRENT_DATE, '+{filter.value} days')"
         
+        elif filter.operator == QueryOperator.BETWEEN:
+            # Handle BETWEEN operator with special TODAY tokens
+            start, end = filter.value
+            
+            # Convert TODAY tokens to SQL expressions
+            if isinstance(start, str) and start.startswith("TODAY"):
+                if start == "TODAY":
+                    start_expr = "CURRENT_DATE"
+                elif "+" in start:
+                    days = start.split("+")[1]
+                    start_expr = f"DATE(CURRENT_DATE, '+{days} days')"
+                elif "-" in start:
+                    days = start.split("-")[1]
+                    start_expr = f"DATE(CURRENT_DATE, '-{days} days')"
+                else:
+                    start_expr = "CURRENT_DATE"
+            else:
+                start_expr = self._quote_value(start)
+            
+            if isinstance(end, str) and end.startswith("TODAY"):
+                if end == "TODAY":
+                    end_expr = "CURRENT_DATE"
+                elif "+" in end:
+                    days = end.split("+")[1]
+                    end_expr = f"DATE(CURRENT_DATE, '+{days} days')"
+                elif "-" in end:
+                    days = end.split("-")[1]
+                    end_expr = f"DATE(CURRENT_DATE, '-{days} days')"
+                else:
+                    end_expr = "CURRENT_DATE"
+            else:
+                end_expr = self._quote_value(end)
+            
+            return f"{column_expr} BETWEEN {start_expr} AND {end_expr}"
+        
         elif filter.operator == QueryOperator.DATE_RANGE:
             # Expect filter.value to be a tuple (start, end)
             start, end = filter.value

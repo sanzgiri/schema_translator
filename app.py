@@ -271,7 +271,7 @@ Query customer databases using natural language. Running in **{mode}**.
 **Examples:**
 - "Show me all contracts from customer A"
 - "Find active contracts with value over $3M"
-- "Show contracts from customer expiring by end "
+- "Contracts from customer B expiring in 30 days"
 
 **Commands:** `/customers` • `/select <id>` • `/limit <n>` • `/debug on/off` • `/stats` • `/help`
 

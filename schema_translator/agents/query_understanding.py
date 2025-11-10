@@ -48,7 +48,20 @@ class QueryUnderstandingAgent:
         concepts = list(self.kg.concepts.keys())
         concept_list = "\n".join([f"- {concept}" for concept in concepts])
 
+        from datetime import datetime
+        current_date = datetime.now().strftime("%Y-%m-%d")
+        current_year = datetime.now().year
+        
         return f"""You are a semantic query understanding assistant. Your job is to parse natural language queries about contracts into structured semantic query plans.
+
+CURRENT DATE: {current_date}
+CURRENT YEAR: {current_year}
+
+When interpreting relative dates:
+- "this year" = {current_year}
+- "next year" = {current_year + 1}
+- "last year" = {current_year - 1}
+- Use TODAY token for "now", "today", or current date references
 
 Available Semantic Concepts:
 {concept_list}

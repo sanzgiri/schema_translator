@@ -301,7 +301,7 @@ async def start():
         # Send welcome message
         welcome_msg = f"""# 🎯 Schema Translator
 
-Query customer databases using natural language. Running in **{mode}**.
+Query customer contracts databases using natural language. 
 
 **Examples:**
 - "Show me all contracts from customer A"
@@ -312,8 +312,6 @@ Query customer databases using natural language. Running in **{mode}**.
 **Settings:** Click the ⚙️ gear icon at the bottom of the chat input to select customers, enable debug mode, or adjust result limit.
 
 **Commands:** `/help` • `/stats` • `/explain <query>`
-
-Ask me anything!
 """
         
         await cl.Message(content=welcome_msg).send()

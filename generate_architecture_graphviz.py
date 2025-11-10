@@ -1,5 +1,5 @@
 """
-Alternative: Generate Schema Translator Architecture using Graphviz.
+Generate Schema Translator Architecture using Graphviz.
 
 Installation:
     pip install graphviz

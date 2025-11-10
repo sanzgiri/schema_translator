@@ -81,7 +81,7 @@ class Config(BaseSettings):
     def validate_config(self) -> None:
         """Validate configuration on startup."""
         # Check API key is set
-        if not self.anthropic_api_key or self.anthropic_api_key == "your_api_key_here":
+        if not self.anthropic_api_key:
             raise ValueError(
                 "ANTHROPIC_API_KEY must be set in environment or .env file"
             )

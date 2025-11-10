@@ -263,6 +263,37 @@ async def start():
         
         mode = "LLM mode" if orchestrator.use_llm else "Mock mode"
         
+        # Get available customers
+        customers = orchestrator.list_available_customers()
+        
+        # Create settings panel - using list syntax for Chainlit 2.9.0
+        settings = [
+            cl.input_widget.Select(
+                id="customer_selection",
+                label="Query Customers",
+                values=["All Customers"] + [f"Customer {c.split('_')[1].upper()}" for c in customers],
+                initial_value="All Customers",
+                description="Select which customer database(s) to query"
+            ),
+            cl.input_widget.Switch(
+                id="debug_mode",
+                label="Debug Mode",
+                initial=False,
+                description="Show SQL queries and semantic plans"
+            ),
+            cl.input_widget.Slider(
+                id="result_limit",
+                label="Max Results",
+                initial=10,
+                min=5,
+                max=100,
+                step=5,
+                description="Maximum number of rows to display"
+            )
+        ]
+        
+        await cl.ChatSettings(settings).send()
+        
         # Send welcome message
         welcome_msg = f"""# 🎯 Schema Translator
 
@@ -271,17 +302,18 @@ Query customer databases using natural language. Running in **{mode}**.
 **Examples:**
 - "Show me all contracts from customer A"
 - "Find active contracts with value over $3M"
-- "Contracts from customer B expiring in 30 days"
+- "Contracts expiring in 30 days"
+- "Count active contracts by customer"
 
-**Commands:** `/customers` • `/select <id>` • `/limit <n>` • `/debug on/off` • `/stats` • `/help`
+**Settings:** Click the ⚙️ gear icon at the bottom of the chat input to select customers, enable debug mode, or adjust result limit.
+
+**Commands:** `/help` • `/stats` • `/explain <query>`
 
 Ask me anything!
 """
         
         await cl.Message(content=welcome_msg).send()
         
-        # Get available customers
-        customers = orchestrator.list_available_customers()
         logger.info(f"Chat started with {len(customers)} customers available")
         
     except Exception as e:
@@ -289,6 +321,32 @@ Ask me anything!
         await cl.Message(
             content=f"❌ **Error:** Failed to initialize. Please check configuration.\n\n`{str(e)}`"
         ).send()
+
+
+@cl.on_settings_update
+async def on_settings_change(settings):
+    """Handle settings changes from the sidebar."""
+    orchestrator = cl.user_session.get("orchestrator")
+    
+    # Update debug mode
+    debug_mode = settings.get("debug_mode", False)
+    cl.user_session.set("debug_mode", debug_mode)
+    
+    # Update result limit
+    result_limit = settings.get("result_limit", 10)
+    cl.user_session.set("result_limit", result_limit)
+    
+    # Update customer selection
+    customer_selection = settings.get("customer_selection", "All Customers")
+    if customer_selection == "All Customers":
+        cl.user_session.set("selected_customers", [])
+        await cl.Message(content="✅ Now querying **all customers**.").send()
+    else:
+        # Extract customer ID from "Customer A" format
+        customer_letter = customer_selection.split()[-1].lower()
+        customer_id = f"customer_{customer_letter}"
+        cl.user_session.set("selected_customers", [customer_id])
+        await cl.Message(content=f"✅ Now querying **{customer_id}**.").send()
 
 
 @cl.on_message
@@ -485,28 +543,30 @@ async def handle_command(command: str, orchestrator: ChatOrchestrator, debug_mod
 - "Query customer B and customer C databases"
 - "Count contracts by status"
 - "List contracts with value over 10000"
-- "Show active contracts in customer_a expiring in 2026"
+- "Show active contracts expiring in 90 days"
+- "Contracts ending this year"
+
+**Settings (⚙️ gear icon at bottom of chat input):**
+- **Query Customers** - Select which customer database to query (or all)
+- **Debug Mode** - Toggle to see SQL queries and semantic plans
+- **Max Results** - Adjust how many rows to display (5-100)
 
 **Important Notes:**
-- You can query specific customers by saying "customer A", "customer_a", "from customer B", etc.
-- Without specifying, queries run across all available databases
+- You can query specific customers using the settings OR by saying "customer A", "from customer B", etc. in your query
 - **Customer** column in results shows which database (A, B, C, etc.) each contract came from
+- Settings changes apply to all subsequent queries
 
 **Commands:**
-- `/customers` - List available databases (customer_a through customer_f)
-- `/select <customer_id>` - Query specific database (e.g., `/select customer_a`)
-- `/select all` - Query all databases (default)
-- `/limit <number>` - Set max rows to display (default: 10)
-- `/debug on/off` - Toggle debug mode
-- `/stats` - Show query statistics
+- `/customers` - List available databases with details
+- `/stats` - Show query statistics and knowledge graph info
 - `/explain <query>` - Explain how a query will be processed
 - `/help` - Show this help message
 
 **Tips:**
 - Use natural language - I'll understand it!
 - Be specific about what you want to see
-- Use filters like "active", "over 10000", "expiring in 90 days"
-- Enable debug mode to see SQL queries and semantic plans
+- Use filters like "active", "over $1M", "expiring in 30 days", "this year"
+- Enable debug mode to see how queries are translated to SQL
 """
         await cl.Message(content=help_msg).send()
     
